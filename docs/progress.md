@@ -164,3 +164,88 @@
   - `/privacy` and `/accessibility` don't exist.
   - The Topbar `home` variant's children slot is ready for E4's statement.
   - The skip link uses `z-50` (a Tailwind default, not a token).
+
+## E3: Content model (built around the imported articles) · 2026-10-02
+- Built:
+  - `src/lib/categories.ts`: `CATEGORIES`, keyed by the frontmatter label, each `{ label, slug, headerMode }` (A4); `Category` type.
+  - `src/lib/dates.ts`: `isoDate` (zod: a YAML Date or a YYYY-MM-DD string → YYYY-MM-DD) and `formatDate` ("Oct 1, 2026", in UTC). Shared by bills, posts and pages.
+  - `src/lib/bills.ts`: zod-parses `content/bills.json` and `content/bill-stats.json` at import. `getBills(ids)` throws on an unknown id. Also `sponsorLine`, `statusLine` and `getBillStats`. It `console.warn`s at import while `placeholder: true`.
+  - `src/lib/posts.ts`:
+    * `postFrontmatter` (a zod `strictObject`);
+    * `parseFrontmatter(schema, file, source)`, which throws "<file>: invalid frontmatter" plus zod's field path;
+    * `getAllPosts`, `getPost`, `getFeaturedPost` and `compileMdx(body)`.
+
+    Every post is read and validated once at import, bill ids included, so any route that imports posts.ts fails the build on a bad post.
+  - `src/lib/pages.ts`: `getPage(slug)` returns `{ title, description, updated, body }`.
+  - `src/components/Chart.tsx`: a `<figure>` with:
+    * the title in heading-h4;
+    * the summary in text-regular;
+    * a real `<table>` in text-regular, with an sr-only `<caption>` equal to the title, `border-tile-line` row lines, the first cell of each row a `th scope="row"`, and all-number columns right-aligned with `tabular-nums`;
+    * a figcaption, "Source: <link>", in text-small.
+  - `src/app/accessibility/page.tsx` and `src/app/privacy/page.tsx`: Topbar (article variant, with `current`); a paper Tile holding the h1 (display-h2), "Updated <time>" (heading-h5, muted) and the body, all in `mx-auto max-w-measure`; then `<SiteEnd />`. The `<main>` matches /tracker.
+  - `content/bill-stats.json`: the placeholder numbers, as given.
+  - `src/lib/content.test.ts`, `vitest.config.mts` and `npm run test:content`. The test checks that:
+    * all 6 posts validate;
+    * every referenced bill id exists;
+    * each post compiles and renders;
+    * a post missing a category fails, naming the file and "category".
+- Changed:
+  - `src/mdx-components.tsx`: the A5 element map (see Decisions), plus `Chart` and `D3Chart`.
+  - `src/app/globals.css`: `--spacing-12` (logged in token-log.md).
+  - `package.json`:
+    * `@mdx-js/mdx` ^3.1.1 (Joey approved it this session; it was already installed under `@mdx-js/loader`);
+    * `vitest` ^4.1.11 as a dev dependency (v5 conflicts with the project's `@types/node@20`);
+    * the `test:content` script.
+  - `CLAUDE.md`: E3 ticked.
+  - No content file was edited. `content/_fixtures` didn't exist.
+- Decisions:
+  - **MDX is compiled with `@mdx-js/mdx` `evaluate()`, not through `@next/mdx` imports.** The `@next/mdx` loader doesn't understand YAML frontmatter: it would render `---` plus the YAML as an `<hr>` and a setext h2. So gray-matter strips the frontmatter, and `compileMdx` evaluates the body with `useMDXComponents`. `@next/mdx` stays in next.config, but the content doesn't use it. E5's article route should use `compileMdx(post.body)`.
+  - **`<D3Chart>` renders nothing.** The TAKE IT DOWN post nests one inside `<Chart>`, and MDX throws on an undefined component. The prompt says no chart library, so mdx-components maps it to `() => null`, and Chart ignores its children.
+  - **The Chart caption is `sr-only`.** The visible title is the heading-h4 line above the summary, so a visible caption would repeat it. The source link has no ↗, matching body links, since it sits in the body.
+  - **Body styles:**
+    * The wrapper is `.prose-article space-y-24 type-text-article`, so p and li need no mapping.
+    * h2 is display-h3 with `mt-32`. Margins collapse with the 24, which gives 32 above and 24 below.
+    * h3 isn't specified in A5 and isn't used yet: heading-h4 with the same spacing.
+    * ul/ol: `pl-24 space-y-12`, with markers in `text-tile-muted`.
+    * blockquote: `border-l-2 border-tile-fg pl-24 space-y-24`, upright.
+    * strong is `font-semibold`; em is `font-normal italic`.
+    * Links: `http(s)` hrefs become `<a rel="noopener">`; anything else uses `next/link`.
+  - **Frontmatter is strict:** an unknown key fails the build, so a typo like `editorNote:` can't silently drop. `editorNotes`, `sources` and `image` stay optional (not defaulted), per the prompt; `bills` defaults to [].
+  - **Drafts** are excluded only when `NODE_ENV === "production"`. `getFeaturedPost()` returns the first `featured: true` post, else `getAllPosts()[0]`. So the draft TAKE IT DOWN post is featured in dev (and in vitest), and the States post is featured in production. `getPost(draftSlug)` is undefined in production, so E5 should call `notFound()`.
+  - **Reading minutes** count the whitespace-separated tokens of the raw body (JSX props, URLs and `{/* */}` comments included), divided by 230 and rounded up.
+  - **Static page spacing** (no Figma frame exists): h1 to "Updated" is `mt-stack`, and "Updated" to the body is `mt-tile-md`.
+  - **The status line** follows the format given, so it reads, for example, "Became law May 19, 2025 as of Oct 1, 2026".
+  - **The placeholder warning prints once per build worker** that loads the content layer (3× in `next build`). In E3 it comes from /accessibility and /privacy, which import posts.ts for `compileMdx`.
+- Verified:
+  - `npm run lint` clean; Prettier clean.
+  - `npm run build` passes and prints the bill-stats warning; /accessibility and /privacy are static.
+  - `npm run test:content`: 9/9 pass. `npm run test:e2e`: 31 passed, 4 skipped (unchanged).
+  - **Build mutations** (a temporary post, deleted afterward); both fail the build:
+    * no category: "content/posts/zz-temp.mdx: invalid frontmatter ✖ Invalid option … → at category";
+    * `bills: ["hr9999-119"]`: "content/posts/zz-temp.mdx: Unknown bill id "hr9999-119"".
+  - **Posts** (dev): see the table in the E3 report. Production returns 5 posts (the draft is dropped).
+  - **Pages** (production build, Playwright at 1440, 1366, 1280, 1024, 991, 768 and 390):
+    * at 1440: the h1 is 66px at x 400–1040 (the measure); "Updated" is 20px at ink 72%; the body is 20/32; h2 is 38px with 32 above and 24 below; list markers are ink 72%; external links have `rel=noopener`;
+    * axe: 0 violations at 1440, 991 and 390 on both pages;
+    * no horizontal scroll at any width, or at 320;
+    * keyboard: skip link, logo, 5 nav links, the body link(s), email, Submit, then 5 footer links, each with a 2px solid outline.
+  - **Screenshots:** `screens/e3/{accessibility,privacy}-{1440,1366,1280,1024,991,768,390}.png`.
+  - **Not done:**
+    * a Figma compare (these pages have no frame, and the MCP isn't authenticated);
+    * an Eclipse parity check in Chrome (no tokens were retuned; the only token change is the new 12 step).
+
+    The Chart has no route yet, so only the vitest render checks it.
+- Open for next prompt:
+  - **Body spacing grows at 991.** From 1024 to 991, p→p goes 21 → 24 and the h2 gap 28 → 32, because they use the `space-*` primitives as A5 specifies; the text itself holds at 18. If Joey wants no growth, switch the paragraph gap to `stack` (24 → 16) and add a layout token for 32.
+  - **Chart:** its first real render is in E5. Run axe on it there, and decide whether the title line should be a heading.
+  - **Placeholders left as they are:** `[EMAIL]` (accessibility.mdx:59, privacy-policy.mdx:37), `[TEST DATE]` (accessibility.mdx:35) and both pages' BEFORE PUBLISHING comment blocks.
+  - **TODO(joey), by file:line:**
+    * `content/bills.json:2`: verify every status on Congress.gov and update asOf.
+    * `content/pages/accessibility.mdx:4`: set updated to the day the tests are run.
+    * `content/pages/privacy-policy.mdx:4`: set updated to the go-live day. `:10`: replace [EMAIL].
+    * `comparing-the-ai-policies…mdx`: `:3` verify the dek; `:4` the real publish date.
+    * `house-representatives…deepseek.mdx`: `:3` verify the dek; `:4` the real publish date.
+    * `rep-bilirakis…mdx`: `:3` verify the dek; `:4` the real publish date; `:10` verify the status on Congress.gov (editor note date).
+    * `rep-french-hill…mdx`: `:2` the title comes from the filename; `:3` verify the dek; `:4` the real publish date.
+    * `states-taking-the-lead…mdx`: `:3` verify the dek; `:4` the real publish date. Missing links at `:12` (the Executive Order), `:14` (Nelson Mullins), `:16` (the IAPP tracker), `:20` (AB 1018), `:26` (SB 2) and `:32` (HB 1709).
+    * `what-the-take-it-down-act…mdx`: `:7` verify every fact before removing `draft`; `:67` re-check the GovTrack cosponsor counts; `:71` link the specific EFF analysis. Its second editor note (`:15`, not a TODO) says "Example correction for design review only. Delete before publishing."

@@ -571,6 +571,17 @@ Read docs/build-prompts.md Part A (especially A1, A3, A4 and A5) and CLAUDE.md. 
 
 Build src/app/posts/[slug]/page.tsx with generateStaticParams and generateMetadata (the title, plus the dek as the description).
 
+0) CARRY-OVER FROM E3 (do these first):
+   - ONE MDX PIPELINE: posts and pages compile through the gray-matter + @mdx-js/mdx function in src/lib/posts.ts. Use that same function for the article body.
+     * If nothing imports .mdx files directly, remove @next/mdx (package.json, and the createMDX wrapper in next.config.ts).
+     * Keep mdx-components.tsx only if the compile function uses it.
+     * Remove @mdx-js/react if nothing uses it.
+     Report what you removed.
+   - PROSE SPACING IN em, NOT space-* primitives: the article paragraph and heading gaps currently grow at 992 → 991 (21 → 24 and 28 → 32), because they use rem primitives while the body text holds at 18px.
+     * In .prose-article, express the vertical rhythm in em relative to type-text-article: paragraph spacing 1.2em (24 at 20px), the gap above an h2 1.6em, list items 0.6em.
+     * The spacing then tracks the text and never grows as the width shrinks.
+     * Add the paragraph gap to tests/scaling.spec.ts.
+
 1) TOPBAR, article variant (with its bottom line).
 
 2) HEADER: a Tile whose mode comes from the category (A4). Height about 702 at 1440, including the overlap below.

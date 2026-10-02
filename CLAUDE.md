@@ -248,7 +248,7 @@ Keep it short.
 - [x] E1.1: tablet type step, fluid-root floor, hover fade
 - [x] E1.2: layout tokens at ≤991, small-text floor
 - [x] E2: shell components (Tile, ActionRow, Pill, Topbar, Footer, NewsletterBand)
-- [ ] E3: content model around the imported articles
+- [x] E3: content model around the imported articles
 - [ ] E4: Home (HomeNew)
 - [ ] E5: Article
 - [ ] E6: mobile first pass
