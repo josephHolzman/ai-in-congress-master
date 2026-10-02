@@ -1,0 +1,59 @@
+---
+title: "Accessibility"
+description: "How AI in Congress is designed and tested for accessibility, its known limitations, and how to report a problem."
+updated: 2026-10-01 # TODO(joey): set to the day you actually run the tests below
+---
+
+{/*
+  BEFORE PUBLISHING: fill in or delete every [bracket].
+  - [EMAIL]: a contact address you check. Not your work email.
+  - [TEST DATE]: the day you actually run the checks under "How it's tested".
+  - Delete any test you didn't run. Don't claim a check you haven't done.
+  - "Readable without JavaScript": confirm by disabling JS in the browser and loading an article.
+*/}
+
+AI in Congress is meant to be usable by everyone who wants to follow how Congress handles artificial intelligence, including people who use screen readers, keyboards, magnification, or other assistive technology.
+
+## Standard
+
+The site aims to meet the [Web Content Accessibility Guidelines (WCAG) 2.2](https://www.w3.org/TR/WCAG22/) at Level AA. I treat that as a minimum, not a finish line. Where the site falls short, the gaps are listed below rather than hidden.
+
+## What that means in practice
+
+- **Readable text.** Body text and links meet a contrast ratio of at least 4.5:1 against the background. Large headings and interface elements meet at least 3:1.
+- **Zoom and resizing.** Pages reflow into a single column at 400% zoom, with no sideways scrolling. Text can be resized and spaced out without content being cut off.
+- **Keyboard access.** Every link and control can be reached and used with a keyboard, in a logical order, with a clearly visible focus outline. A "Skip to content" link is the first thing on every page.
+- **Structure.** Each page has one main heading and a logical heading order, and uses landmarks (header, navigation, main content, footer) so screen reader users can jump between sections.
+- **Clear links.** Link text describes where the link goes. Links in body text are underlined, so they don't rely on color alone. Links in the site's navigation that leave the site are marked with an arrow (↗).
+- **Dates and status.** Publication dates, update notes, and bill status are written out in text, and each status shows the date it was last checked.
+- **Charts.** Any chart includes a written summary of its main point and the underlying data as a table.
+- **Motion.** Nothing on the site autoplays, flashes, or moves on its own. If your device is set to reduce motion, transitions are turned off.
+- **Target size.** Links and buttons are at least 24 by 24 pixels.
+
+## How it's tested
+
+The site was last tested on [TEST DATE] using:
+
+- Automated checks with axe DevTools on every page template
+- Keyboard-only navigation in Chrome and Safari
+- VoiceOver with Safari on macOS
+- Browser zoom at 200% and 400%, and a 320-pixel-wide viewport
+- Contrast checks for every color pair used for text and controls
+
+Automated tools catch only some problems, so manual testing is the main check.
+
+## Known limitations
+
+- **External sites.** Articles link to sources such as Congress.gov, court opinions, and news outlets. I can't control how accessible those sites are.
+- **Bill status.** Bill information comes from public congressional data and can lag behind events in Congress. Each status shows the date it was last checked.
+- **Older articles.** Articles published before this redesign were reviewed and updated, but if you find a problem in one, please report it.
+
+There are no other known issues as of the date below.
+
+## Technology
+
+The site is built with HTML, CSS, and a small amount of JavaScript. Articles are readable without JavaScript. Only small conveniences, such as the "Copy article link" button and interactive charts, need it. Every chart's data is also available as a table that doesn't.
+
+## Report a problem
+
+If something on this site is hard to use, or doesn't work with your assistive technology, please email [EMAIL]. Tell me the page, what you were trying to do, and the browser and assistive technology you use if you're comfortable sharing it. I aim to reply within five business days, and I'll fix confirmed problems as quickly as I can.

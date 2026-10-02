@@ -1,0 +1,75 @@
+---
+title: "What the TAKE IT DOWN Act Requires of Platforms"
+description: "The first federal law aimed at AI-generated intimate imagery puts a 48-hour removal clock on platforms, and critics warn the takedown system can be abused."
+date: 2025-05-20
+category: "Deepfakes"
+author: "Joseph Holzman"
+draft: true # Demo article for the redesign. Shows in `next dev`, never in production builds. TODO(joey): verify every fact before removing this line.
+bills: ["s146-119", "hr2794-119"]
+editorNotes:
+  - type: update
+    date: 2026-05-19
+    text: "One year after enactment, the deadline for covered platforms to set up the law's notice-and-removal process has passed. The Federal Trade Commission can now enforce it."
+  - type: correction
+    date: 2026-05-20
+    text: "Example correction for design review only. Delete before publishing."
+sources:
+  - label: "Congress.gov, “S.146 — TAKE IT DOWN Act, 119th Congress (2025–2026)”"
+    href: "https://www.congress.gov/bill/119th-congress/senate-bill/146"
+  - label: "Congress.gov, “H.R.2794 — NO FAKES Act of 2025, 119th Congress (2025–2026)”"
+    href: "https://www.congress.gov/bill/119th-congress/house-bill/2794"
+  - label: "GovTrack, “S. 146 (119th): TAKE IT DOWN Act”"
+    href: "https://www.govtrack.us/congress/bills/119/s146"
+---
+
+On May 19, 2025, President Trump signed the [TAKE IT DOWN Act](https://www.congress.gov/bill/119th-congress/senate-bill/146) into law. It is the first federal statute aimed squarely at nonconsensual intimate imagery, including images created or altered with artificial intelligence. Sen. Ted Cruz (R-TX) introduced the bill in January 2025 with Sen. Amy Klobuchar (D-MN), the Senate passed it by unanimous consent in February, and the House followed in April by a vote of 409 to 2.
+
+## What the law makes illegal
+
+The act makes it a federal crime to knowingly publish intimate images of a person without their consent. It covers both authentic images and what the statute calls "digital forgeries": images made or altered with AI or other software that are indistinguishable from the real person. Threatening to publish such images is also a crime. The penalties are higher when the person depicted is a minor.
+
+## The 48-hour removal clock
+
+The law's second half applies to platforms. A covered platform must give people a way to request removal of intimate images published without their consent. Once it receives a valid request, the platform has 48 hours to take the image down and must make reasonable efforts to remove known copies. Platforms had one year from enactment to set up that process. The [Federal Trade Commission](https://www.ftc.gov/) enforces the requirement, treating a failure to comply as an unfair or deceptive practice.
+
+<Chart
+  title="Cosponsors on AI bills this site tracks"
+  summary="The TAKE IT DOWN Act passed with 21 Senate cosponsors. Several House AI bills have drawn more support but have not moved."
+  source={{ label: "GovTrack", href: "https://www.govtrack.us/" }}
+  table={{
+    columns: ["Bill", "Cosponsors"],
+    rows: [
+      ["H.R. 2385, CREATE AI Act", 34],
+      ["H.R. 1121, No DeepSeek on Government Devices Act", 32],
+      ["S. 146, TAKE IT DOWN Act", 21],
+      ["S. 1367, NO FAKES Act", 13],
+      ["H.R. 2794, NO FAKES Act", 10],
+      ["H.R. 1283, Protecting Our Children in an AI World Act", 1]
+    ]
+  }}
+>
+  <D3Chart
+    type="bar"
+    data={[
+      { x: "H.R. 2385", y: 34 },
+      { x: "H.R. 1121", y: 32 },
+      { x: "S. 146", y: 21 },
+      { x: "S. 1367", y: 13 },
+      { x: "H.R. 2794", y: 10 },
+      { x: "H.R. 1283", y: 1 }
+    ]}
+    xLabel="Bill"
+    yLabel="Cosponsors"
+    format="number"
+  />
+</Chart>
+
+{/* TODO(joey): the cosponsor counts come from GovTrack as pulled on Oct 1, 2026. Re-check them before publishing. */}
+
+## Why critics are worried
+
+Civil liberties groups, including the [Electronic Frontier Foundation](https://www.eff.org/), supported the goal but objected to the takedown system. Their concern is that the law asks platforms to remove content within 48 hours without a meaningful way to check whether a request is legitimate. A platform facing FTC enforcement has every reason to remove first and ask questions later, which could make the system a tool for silencing lawful speech. {/* TODO(joey): link the specific EFF analysis instead of the homepage. */}
+
+## What comes next
+
+The TAKE IT DOWN Act covers the publication of intimate images. It does not address the broader question of who controls a person's digital likeness. That question belongs to the [NO FAKES Act](https://www.congress.gov/bill/119th-congress/house-bill/2794), which would create a federal right to control digital replicas of a person's voice and appearance. It was introduced in both chambers in April 2025 and has not advanced.

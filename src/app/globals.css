@@ -1,0 +1,397 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-switzer), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Tailwind's defaults are cleared so only our palette and our px-named
+   spacing exist; otherwise p-40 = 40px but p-12 = 48px via the multiplier. */
+@theme {
+  --color-*: initial;
+  --color-paper: #ffffff;
+  --color-stone: #edebe6;
+  --color-ink: #08080c;
+  --color-navy: #10133a;
+  --color-signal: #ff4301;
+  --color-mint: #c2fcd3;
+  --color-blush: #efcfc8;
+  --color-volt: #e4fa5b;
+  --color-amber: #ffae3d;
+  --color-sand: #ddd6be;
+  --color-slate: #5b6aa8;
+  --color-sage: #6f9c86;
+  --color-blue: #0060c4;
+
+  --spacing-*: initial;
+  --spacing-0: 0;
+  --spacing-4: 0.25rem;
+  --spacing-8: 0.5rem;
+  --spacing-16: 1rem;
+  --spacing-24: 1.5rem;
+  --spacing-32: 2rem;
+  --spacing-40: 2.5rem;
+  --spacing-56: 3.5rem;
+  --spacing-80: 5rem;
+  --spacing-140: 8.75rem;
+}
+
+/* Layout tokens switch at 991, so the utilities read them at use time. */
+@theme inline {
+  --spacing-tile: var(--layout-tile-pad);
+  --spacing-tile-md: var(--layout-tile-top-md);
+  --spacing-tile-lg: var(--layout-tile-top-lg);
+  --spacing-stack: var(--layout-stack);
+  --spacing-stack-sm: var(--layout-stack-sm);
+  --container-measure: var(--measure);
+}
+
+:root {
+  --muted: 0.72;
+  /* Outside a tile, focus outlines and tile utilities read ink. */
+  --tile-fg: var(--color-ink);
+  --color-link: var(--color-blue);
+  --color-link-hover: var(--color-navy);
+
+  --layout-tile-pad: var(--spacing-40);
+  --layout-tile-top-md: var(--spacing-80);
+  --layout-tile-top-lg: var(--spacing-140);
+  --layout-stack: var(--spacing-24);
+  --layout-stack-sm: var(--spacing-8);
+  --measure: 40rem;
+
+  /* Shell sizes from Figma (px at 1440). */
+  --logo-topbar: 10.3125rem; /* 165 */
+  --logo-footer: 40.5rem; /* 648 */
+  --nav-cols: minmax(0, 12rem) minmax(0, 12.4375rem) minmax(0, 12rem); /* 192 199 192 */
+  /* The right group starts on the 50% line + 112 (x 832 at 1440); the tile's
+     padding is symmetric, so 50% of its content box lands on that line. */
+  --footer-cols: calc(50% + 7rem) minmax(0, 1fr);
+  --disclaimer: 35rem;
+}
+
+/* The root jumps 14 → 16px at 991, so layout steps down there too (A7).
+   Without it, tile-top-md would grow 70 → 80 as the window narrows. */
+@media (max-width: 991px) {
+  :root {
+    --layout-tile-pad: var(--spacing-24);
+    --layout-tile-top-md: var(--spacing-56);
+    --layout-tile-top-lg: var(--spacing-80);
+    --layout-stack: var(--spacing-16);
+  }
+}
+
+/* Registered so the hover flip can interpolate the mode's colors; text,
+   muted text and lines inherit them and fade with the background. */
+@property --tile-bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --tile-fg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --tile-fg-muted {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --tile-line {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@layer base {
+  /* Tile modes (A3). Muted and line derive from fg, so a mode only names bg and
+     fg; sage, signal and slate override muted because 72% fails contrast. */
+  [data-tile] {
+    --tile-fg-muted: color-mix(
+      in srgb,
+      var(--tile-fg) calc(var(--muted) * 100%),
+      transparent
+    );
+    --tile-line: color-mix(in srgb, var(--tile-fg) 12%, transparent);
+    --tile-hover-bg: var(--color-mint);
+    background-color: var(--tile-bg);
+    color: var(--tile-fg);
+  }
+
+  [data-tile="paper"] {
+    --tile-bg: var(--color-paper);
+    --tile-fg: var(--color-ink);
+  }
+  [data-tile="stone"] {
+    --tile-bg: var(--color-stone);
+    --tile-fg: var(--color-ink);
+  }
+  [data-tile="mint"] {
+    --tile-bg: var(--color-mint);
+    --tile-fg: var(--color-ink);
+    --tile-hover-bg: var(--color-mint);
+  }
+  [data-tile="amber"] {
+    --tile-bg: var(--color-amber);
+    --tile-fg: var(--color-ink);
+  }
+  [data-tile="blush"] {
+    --tile-bg: var(--color-blush);
+    --tile-fg: var(--color-ink);
+  }
+  [data-tile="volt"] {
+    --tile-bg: var(--color-volt);
+    --tile-fg: var(--color-ink);
+  }
+  [data-tile="sand"] {
+    --tile-bg: var(--color-sand);
+    --tile-fg: var(--color-ink);
+  }
+  [data-tile="sage"] {
+    --tile-bg: var(--color-sage);
+    --tile-fg: var(--color-ink);
+    --tile-fg-muted: var(--tile-fg);
+    --tile-line: color-mix(in srgb, var(--tile-fg) 20%, transparent);
+  }
+  [data-tile="signal"] {
+    --tile-bg: var(--color-signal);
+    --tile-fg: var(--color-ink);
+    --tile-fg-muted: var(--tile-fg);
+    --tile-line: color-mix(in srgb, var(--tile-fg) 20%, transparent);
+    --tile-hover-bg: var(--color-signal);
+  }
+  [data-tile="ink"] {
+    --tile-bg: var(--color-ink);
+    --tile-fg: var(--color-paper);
+    --tile-line: color-mix(in srgb, var(--tile-fg) 20%, transparent);
+  }
+  [data-tile="navy"] {
+    --tile-bg: var(--color-navy);
+    --tile-fg: var(--color-paper);
+    --tile-line: color-mix(in srgb, var(--tile-fg) 20%, transparent);
+  }
+  [data-tile="slate"] {
+    --tile-bg: var(--color-slate);
+    --tile-fg: var(--color-paper);
+    --tile-fg-muted: var(--tile-fg);
+    --tile-line: color-mix(in srgb, var(--tile-fg) 20%, transparent);
+  }
+
+  /* Hover and focus switch the whole mode to mint, not just the background. */
+  [data-tile][data-interactive] {
+    transition-property: --tile-bg, --tile-fg, --tile-fg-muted, --tile-line;
+    transition-duration: 300ms;
+    transition-timing-function: ease-out;
+  }
+  [data-tile][data-interactive]:is(:hover, :focus-within) {
+    --tile-bg: var(--tile-hover-bg);
+    --tile-fg: var(--color-ink);
+    --tile-fg-muted: color-mix(
+      in srgb,
+      var(--color-ink) calc(var(--muted) * 100%),
+      transparent
+    );
+    --tile-line: color-mix(in srgb, var(--color-ink) 12%, transparent);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-tile][data-interactive] {
+      transition-duration: 0ms;
+    }
+  }
+}
+
+@utility bg-tile {
+  background-color: var(--tile-bg);
+}
+@utility text-tile {
+  color: var(--tile-fg);
+}
+@utility text-tile-muted {
+  color: var(--tile-fg-muted);
+}
+@utility border-tile-line {
+  border-color: var(--tile-line);
+}
+@utility border-tile-fg {
+  border-color: var(--tile-fg);
+}
+
+/* Type (A5). Line heights are Figma's px pairs as unitless ratios.
+   The root jumps 14 → 16px at 991, so every style steps down there (A5,
+   ≤991 column) to keep type from growing as the window narrows. */
+@utility type-display-h1 {
+  font-family: var(--font-switzer);
+  font-size: 5.625rem;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  font-variant-numeric: lining-nums tabular-nums;
+  text-box: trim-both cap alphabetic;
+  @media (max-width: 991px) {
+    font-size: 3.75rem;
+  }
+}
+@utility type-display-h2 {
+  font-family: var(--font-switzer);
+  font-size: 4.125rem;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  text-box: trim-both cap alphabetic;
+  @media (max-width: 991px) {
+    font-size: 2.5rem;
+  }
+}
+@utility type-display-h3 {
+  font-family: var(--font-switzer);
+  font-size: 2.375rem;
+  line-height: calc(42 / 38);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  text-box: trim-both cap alphabetic;
+  @media (max-width: 991px) {
+    font-size: 2rem;
+    line-height: calc(36 / 32);
+  }
+}
+@utility type-heading-h4 {
+  font-family: var(--font-switzer);
+  font-size: 1.5rem;
+  line-height: calc(31 / 24);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  @media (max-width: 991px) {
+    font-size: 1.25rem;
+    line-height: calc(26 / 20);
+  }
+}
+@utility type-heading-h5 {
+  font-family: var(--font-switzer);
+  font-size: 1.25rem;
+  line-height: calc(28 / 20);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  @media (max-width: 991px) {
+    font-size: 1rem;
+  }
+}
+@utility type-text-large {
+  font-family: var(--font-switzer);
+  font-size: 1.5rem;
+  line-height: calc(31 / 24);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  @media (max-width: 991px) {
+    font-size: 1.25rem;
+    line-height: calc(26 / 20);
+  }
+}
+@utility type-text-medium {
+  font-family: var(--font-switzer);
+  font-size: 1.375rem;
+  line-height: calc(29 / 22);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  @media (max-width: 991px) {
+    font-size: 1.125rem;
+  }
+}
+@utility type-text-article {
+  font-family: var(--font-switzer);
+  font-size: max(1.25rem, 18px);
+  line-height: calc(32 / 20);
+  font-weight: 400;
+  letter-spacing: 0;
+  @media (max-width: 991px) {
+    font-size: 1.125rem;
+  }
+}
+@utility type-text-regular {
+  font-family: var(--font-switzer);
+  font-size: 1rem;
+  line-height: calc(22 / 16);
+  font-weight: 400;
+  letter-spacing: 0;
+  @media (max-width: 991px) {
+    font-size: 0.875rem;
+  }
+}
+@utility type-text-small {
+  font-family: var(--font-switzer);
+  font-size: max(0.875rem, 13px);
+  line-height: calc(20 / 14);
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  @media (max-width: 991px) {
+    font-size: max(0.75rem, 13px);
+  }
+}
+@utility type-ui-nav {
+  font-family: var(--font-switzer);
+  font-size: 1.125rem;
+  line-height: calc(20 / 18);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  @media (max-width: 991px) {
+    font-size: 0.9375rem;
+  }
+}
+@utility type-ui-label {
+  font-family: var(--font-switzer);
+  font-size: max(0.875rem, 13px);
+  line-height: calc(20 / 14);
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  @media (max-width: 991px) {
+    font-size: max(0.75rem, 13px);
+  }
+}
+
+@layer base {
+  /* Fluid root (A6): 16px at 1440, fixed 14px to 1280, 16px from 991 down.
+     The max() floor lets a larger browser default font size win over vw. */
+  html {
+    font-size: max(0.875rem, calc(-0.125rem + 1.25vw));
+  }
+  @media (max-width: 1280px) {
+    html {
+      font-size: 0.875rem;
+    }
+  }
+  @media (max-width: 991px) {
+    html {
+      font-size: 1rem;
+    }
+  }
+  @media (min-width: 1920px) {
+    html {
+      font-size: 1.375rem;
+    }
+  }
+
+  body {
+    @apply bg-paper text-ink type-text-regular antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--tile-fg);
+    outline-offset: 3px;
+  }
+  /* A9: inset on tiles, so the outline sits on the tile's own background. */
+  [data-tile]:focus-visible {
+    outline-offset: calc(var(--spacing-8) * -1);
+  }
+}
+
+@layer components {
+  .prose-article a {
+    color: var(--color-link);
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+  .prose-article a:is(:hover, :focus-visible) {
+    color: var(--color-link-hover);
+    text-decoration-thickness: 2px;
+  }
+}

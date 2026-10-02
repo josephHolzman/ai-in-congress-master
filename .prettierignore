@@ -1,0 +1,5 @@
+# Joey's articles and the project docs are never reformatted.
+content/
+docs/
+*.md
+package-lock.json

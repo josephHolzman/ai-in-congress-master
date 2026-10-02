@@ -1,0 +1,45 @@
+{
+  "_note": "Federal bills referenced by articles. Status text is shown on the site next to 'As of <asOf>'. TODO(joey): verify every status on Congress.gov and update asOf before publishing.",
+  "bills": [
+    {
+      "id": "hr1283-119",
+      "label": "H.R. 1283",
+      "title": "Protecting Our Children in an AI World Act",
+      "sponsor": { "name": "Rep. Gus Bilirakis", "party": "R", "state": "FL" },
+      "introduced": "2025-02-13",
+      "status": "Introduced, no committee action",
+      "asOf": "2026-10-01",
+      "url": "https://www.congress.gov/bill/119th-congress/house-bill/1283"
+    },
+    {
+      "id": "hr1121-119",
+      "label": "H.R. 1121",
+      "title": "No DeepSeek on Government Devices Act",
+      "sponsor": { "name": "Rep. Josh Gottheimer", "party": "D", "state": "NJ" },
+      "introduced": "2025-02-07",
+      "status": "Introduced, no committee action",
+      "asOf": "2026-10-01",
+      "url": "https://www.congress.gov/bill/119th-congress/house-bill/1121"
+    },
+    {
+      "id": "s146-119",
+      "label": "S. 146",
+      "title": "TAKE IT DOWN Act",
+      "sponsor": { "name": "Sen. Ted Cruz", "party": "R", "state": "TX" },
+      "introduced": "2025-01-16",
+      "status": "Became law May 19, 2025",
+      "asOf": "2026-10-01",
+      "url": "https://www.congress.gov/bill/119th-congress/senate-bill/146"
+    },
+    {
+      "id": "hr2794-119",
+      "label": "H.R. 2794",
+      "title": "NO FAKES Act of 2025",
+      "sponsor": { "name": "Rep. María Elvira Salazar", "party": "R", "state": "FL" },
+      "introduced": "2025-04-09",
+      "status": "Introduced, no committee action",
+      "asOf": "2026-10-01",
+      "url": "https://www.congress.gov/bill/119th-congress/house-bill/2794"
+    }
+  ]
+}
