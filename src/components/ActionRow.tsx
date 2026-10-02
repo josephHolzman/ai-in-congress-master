@@ -21,7 +21,8 @@ export function ActionRow({
   const Icon = external ? ArrowUpRight : ArrowRight;
   const content = (
     <>
-      <span className="type-heading-h4">
+      {/* The nav links' type (Topbar), so every lined link row reads alike. */}
+      <span className="type-heading-h5">
         {label}
         {external && <span className="sr-only"> (external site)</span>}
       </span>

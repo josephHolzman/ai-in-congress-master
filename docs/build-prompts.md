@@ -125,8 +125,8 @@ Font: **Switzer Variable**, loaded locally. Letter spacing is in **em**, convert
 | `display-h1` | 90 / 90 | 60 / 60 | 600 | −0.04em | Figma | Bill stat numbers |
 | `display-h2` | 66 / 66 | 40 / 40 | 600 | −0.035em | Figma | Home statement, featured title, article title, newsletter heading |
 | `display-h3` | 38 / 42 | 32 / 36 | 600 | −0.03em | Figma | Bill band heading, grid tile titles, article h2, "Sources", newsletter field and button text |
-| `heading-h4` | 24 / 31 | 20 / 26 | 600 | −0.02em | Figma | Stat labels, action-row labels, featured dek, article dek, rail cap, rail bill title |
-| `heading-h5` | 20 / 28 | 16 / 22.4 | 600 | −0.015em | Figma (Inter → Switzer) | Nav links, pills (uppercase), dates, source line, footer links, "Track this bill" |
+| `heading-h4` | 24 / 31 | 20 / 26 | 600 | −0.02em | Figma | Stat labels, featured dek, article dek, rail cap, rail bill title |
+| `heading-h5` | 20 / 28 | 16 / 22.4 | 600 | −0.015em | Figma (Inter → Switzer) | Nav links, pills (uppercase), dates, source line, footer links, "Track this bill", ALL action-row labels (Joey, E5.1: same type as the nav links) |
 | `text-large` | 24 / 31 | 20 / 26 | 400 | −0.015em | Figma | "All articles" back link |
 | `text-medium` | 22 / 29 | 18 / 23.7 | 400 | −0.01em | Spec | (reserved) |
 | `text-article` | 20 / 32 | 18 / 28.8 | 400 | 0 | Figma | Article body, rail status lines, source list items |
@@ -651,12 +651,80 @@ Verify:
 Stop and report. Tick E5 in CLAUDE.md, then append the E5 handoff entry to docs/progress.md (CLAUDE.md, "Handoff log").
 ```
 
-## E6: Mobile first pass (≤767), plus tablet sanity checks
+## E5.1: Home refinements (nav parity + bill band layout)
 
 ```
 FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
 1) Read CLAUDE.md in full, including section 0 "Sessions start cold".
 2) Read docs/progress.md (the handoff log). If E5 isn't ticked under Progress in CLAUDE.md, stop and tell me.
+3) Run git status and list src/ and content/ so you know what already exists. Reuse existing components and tokens; never recreate them.
+
+Read docs/build-prompts.md Part A and docs/eclipse-audit.md. This is a small refinement pass on the shell and Home, run after E5.
+If the E5 handoff shows the nav parity work was already done (an earlier draft of E5 included it as step 0b), skip step 1, verify it still holds, and say so.
+
+1) NAV PARITY WITH ECLIPSE (Joey's request, Oct 2). This applies to the Topbar nav on every page.
+   - MEASURE FIRST: open https://web.archive.org/web/20240524202822/https://www.eclipse.xyz/ in Claude in Chrome. Read the computed styles of the header nav links at 1440, 1280 and 1024:
+     * font size, line height, weight and letter spacing;
+     * each link's vertical padding;
+     * the line above each link (thickness, color and opacity);
+     * the column count, column gap and row gap;
+     * the ↗ icon size and position;
+     * the hover and focus behavior.
+
+     Compare them with docs/eclipse-audit.md (it records the nav at 18px with 10px vertical link padding, a 1px line above, a 2-column grid of link columns with a 40px gap, and 2 rows per column). Where the two disagree, trust the live measurement.
+   - SPAN THE RIGHT HALF: the nav block runs from the 50% line (720 at 1440) to the right tile inset (1400 at 1440), so it occupies exactly the right column of the two-column grid. Its left edge lines up with the right column of the Home grid, the featured image's left edge, and the stats at 760 − 40.
+     * The link columns divide that half equally.
+     * Keep our five links and their order (Articles, Privacy Policy, Joey Holzman ↗ / Bill Tracker, Accessibility).
+     * If Eclipse uses fewer columns than we need, keep three equal columns, and note it.
+   - USE TOKENS, NOT NEW VALUES: switch the nav to whichever existing type and spacing tokens match Eclipse best (type-ui-nav is Eclipse's nav size; the link padding, gaps and line come from the existing space/layout tokens). Add a token only if nothing fits, and log every change in docs/token-log.md, marked "carry to Figma".
+   - KEEP WHAT WORKS:
+     * nav targets at least 24px tall;
+     * aria-current on the current page;
+     * the external ↗ plus "(external site)";
+     * the logo on the left;
+     * the nav dropping below the logo when it doesn't fit;
+     * nothing growing as the window shrinks (add the nav width and link font size to tests/scaling.spec.ts);
+     * the focus ring and the sticky focus-within behavior on Home.
+   - Leave the footer nav as it is. Note in your report whether it should follow, for consistency.
+   - VERIFY: side-by-side screenshots of the Eclipse header and ours at 1440 and 1024 in screens/e5/nav/. Measure the nav's left edge at 720 (1440) and at the 50% line at the other widths. Re-run tests/home.spec.ts and tests/shell.spec.ts, since the tab order and nav targets are covered there.
+
+2) BILL BAND LAYOUT (Joey's redesign, Oct 2). Goals:
+   - the "Open the bill tracker" row is the LAST thing the featured band covers on scroll;
+   - the band is shorter, so more of the featured band shows on first load.
+
+   New layout, top to bottom (the DOM order matches the visual order):
+   - Header row, two columns on the half grid:
+     * left: the <h2> "AI bills in the 119th Congress" (type-display-h3);
+     * right: the ActionRow "Open the bill tracker" → /tracker, exactly as wide as TWO nav link columns plus the gap between them, aligned to the LAST two nav columns. Its left edge lines up with the left edge of the second nav column above it, and its right edge with the right tile inset (1400 at 1440). It has its top line and arrow, and aligns to the top of the header row.
+     * Implementation: put the header row's right side on the same column template as the nav (reuse the nav's grid tokens, e.g. --nav-cols, over the same right-half span), and place the ActionRow across the last two columns. That way the edges line up at every width, including when the nav's column count or gap changes in step 1.
+   - Stats row: the existing <dl>, still on the quarter lines (40 / 400 / 760 / 1120 at 1440), directly below the header row, with layout-tile-top-md between them. Number in type-display-h1, label in type-heading-h4, as now.
+   - Source line: "Congress.gov, updated <date>" moves to the bottom left, below the stats (type-heading-h5, text-tile-muted), with layout-tile-top-md above it and the tile's normal bottom padding below.
+   - Remove the old min-height header row and the bottom ActionRow.
+
+   Keep the current copy and colors. The Figma mock still shows old placeholder labels and a navy "2"; ignore those.
+
+   Below 768: the header stacks (heading, then a full-width action row), then the 2×2 stats, then the source line. Same DOM order, no visual reordering.
+
+   Sticky: the band is still sticky at top 0, z 1 (two-stage cascade); the fit check now has an easier job. Confirm on scroll at 1440×900 that the featured band covers the source line and stats first, and the "Open the bill tracker" row last.
+
+   Measure and report that the ActionRow's left and right edges match the second nav column's left edge and the third column's right edge at 1440, 1280 and 1024. Report the band's new height at 1440 (it was 517) and how much of the featured band shows on first load at 1440×900 and 1366×768.
+
+3) VERIFY:
+   - lint, build and the full test:e2e suite (update tests/home.spec.ts for the new order: the tab order is now nav → "Open the bill tracker" → featured → grid);
+   - axe at 1440, 1024, 768 and 390;
+   - tests/scaling.spec.ts passes;
+   - an Eclipse parity check for the nav;
+   - screenshots in screens/e5.1/: home-{1440,1366,1024,768,390}, plus cascade frames at 1440.
+
+Tick E5.1 under Progress in CLAUDE.md and append the E5.1 handoff entry to docs/progress.md (CLAUDE.md, "Handoff log").
+```
+
+## E6: Mobile first pass (≤767), plus tablet sanity checks
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0 "Sessions start cold".
+2) Read docs/progress.md (the handoff log). If E5.1 isn't ticked under Progress in CLAUDE.md, stop and tell me.
 3) Run git status and list src/ and content/ so you know what already exists. Reuse existing components and tokens; never recreate them.
 
 Read docs/build-prompts.md Part A and CLAUDE.md. Joey will refine mobile in Figma. This is a sensible first pass, not final. Keep every change inside @media (max-width: 767px) unless it's a bug, and add a type scale for mobile only.
@@ -702,7 +770,9 @@ Read docs/build-prompts.md Part A and CLAUDE.md. Joey will refine mobile in Figm
 
     - Give --logo-topbar, --nav-cols and --logo-footer ≤991 values that are no larger than their 992 values.
     - Switch the input and button padding from the space-* primitives to the layout tokens (tile-pad horizontally, stack vertically), which already step down.
-    - Add all four to tests/scaling.spec.ts.
+    - --measure also grows at the 991 jump (560 → 640, so the article text column and image widen as the window narrows; see the E5 handoff). Give it a ≤991 value of 35rem (560), so it holds.
+    - The nav is now w-1/2 (E5.1). Check whether its width still grows at 991; if it does, hold it the same way.
+    - Add all of them to tests/scaling.spec.ts.
 
 3) TABLET SANITY (768–1279): the rail is inline (from E5), the measure centers, and the grid stays at two columns. Fix any overflow.
 

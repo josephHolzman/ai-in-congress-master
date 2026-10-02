@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 // Marks each [data-sticky] layer that fits the viewport with data-fits; CSS
 // makes only those sticky (globals.css). Without JS nothing is marked, so
-// nothing sticks.
+// nothing sticks. data-sticky-margin (px) asks for that much room to spare.
 export function StickyFit() {
   useEffect(() => {
     const layers = [...document.querySelectorAll<HTMLElement>("[data-sticky]")];
@@ -12,7 +12,8 @@ export function StickyFit() {
       for (const layer of layers) {
         layer.toggleAttribute(
           "data-fits",
-          layer.offsetHeight <= window.innerHeight,
+          layer.offsetHeight + Number(layer.dataset.stickyMargin ?? 0) <=
+            window.innerHeight,
         );
       }
     };

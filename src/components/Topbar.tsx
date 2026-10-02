@@ -31,7 +31,10 @@ export function Topbar({ variant, current, children }: TopbarProps) {
         <Link href="/" className="block">
           <Logo width="var(--logo-topbar)" className="block" />
         </Link>
-        <nav aria-label="Main">
+        {/* From md, the nav is the right half: 50% of the content box ends on
+            the right inset, so it starts on the 50% line. Below md it drops
+            under the logo, full width. */}
+        <nav aria-label="Main" className="w-full md:w-1/2">
           <ul className="grid grid-cols-(--nav-cols) gap-x-stack gap-y-stack-sm">
             {NAV_LINKS.map(({ label, href, external }) => (
               <li key={label}>

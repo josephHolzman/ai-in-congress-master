@@ -2,31 +2,22 @@ import type { MDXComponents } from "mdx/types";
 import Link from "next/link";
 import { Chart } from "@/components/Chart";
 
-// A5 article styles. p and li take type-text-article from the wrapper.
-// Margins collapse, so an h2's 32 above wins over the 24 between blocks.
+// A5 article styles. p and li take type-text-article from the wrapper; the
+// vertical rhythm is in .prose-article (globals.css).
 const components: MDXComponents = {
   wrapper: ({ children }) => (
-    <div className="prose-article space-y-24 type-text-article">{children}</div>
+    <div className="prose-article type-text-article">{children}</div>
   ),
-  h2: (props) => <h2 className="mt-32 type-display-h3 first:mt-0" {...props} />,
-  h3: (props) => <h3 className="mt-32 type-heading-h4 first:mt-0" {...props} />,
+  h2: (props) => <h2 className="type-display-h3" {...props} />,
+  h3: (props) => <h3 className="type-heading-h4" {...props} />,
   ul: (props) => (
-    <ul
-      className="list-disc space-y-12 pl-24 marker:text-tile-muted"
-      {...props}
-    />
+    <ul className="list-disc pl-24 marker:text-tile-muted" {...props} />
   ),
   ol: (props) => (
-    <ol
-      className="list-decimal space-y-12 pl-24 marker:text-tile-muted"
-      {...props}
-    />
+    <ol className="list-decimal pl-24 marker:text-tile-muted" {...props} />
   ),
   blockquote: (props) => (
-    <blockquote
-      className="space-y-24 border-l-2 border-tile-fg pl-24"
-      {...props}
-    />
+    <blockquote className="border-l-2 border-tile-fg pl-24" {...props} />
   ),
   // Body links get no ↗ (E3); external ones still get rel="noopener".
   a: ({ href = "", ...props }) =>

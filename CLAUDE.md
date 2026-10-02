@@ -250,6 +250,7 @@ Keep it short.
 - [x] E2: shell components (Tile, ActionRow, Pill, Topbar, Footer, NewsletterBand)
 - [x] E3: content model around the imported articles
 - [x] E4: Home (HomeNew)
-- [ ] E5: Article
+- [x] E5: Article
+- [x] E5.1: Home refinements (nav span + bill band layout)
 - [ ] E6: mobile first pass
 - [ ] E7: QA pass

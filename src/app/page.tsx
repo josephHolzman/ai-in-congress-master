@@ -40,20 +40,22 @@ export default function Home() {
           data-sticky
           className="z-1 focus-within:z-3"
         >
-          {/* The stats start tile-top-lg below the header's top (Figma: 140 from
-              heading to stats). A min-height, so a wrapped header still grows. */}
-          <div className="flex min-h-tile-lg flex-wrap items-baseline justify-between gap-x-stack gap-y-stack-sm">
+          {/* The action row sits on the nav's columns (Topbar), in the
+              last one, so its edges line up under it at every width. It's
+              at the top, so the featured band covers it last. */}
+          <div className="grid items-start gap-y-stack md:grid-cols-2">
             <h2 id="bills-heading" className="type-display-h3">
               AI bills in the {stats.congress} Congress
             </h2>
-            <p className="type-heading-h5 text-tile-muted">
-              {stats.source}, updated{" "}
-              <time dateTime={stats.asOf}>{formatDate(stats.asOf)}</time>
-            </p>
+            <div className="md:grid md:grid-cols-(--nav-cols) md:gap-x-stack">
+              <div className="md:col-start-3">
+                <ActionRow label="Open the bill tracker" href="/tracker" />
+              </div>
+            </div>
           </div>
           {/* Columns are true quarters of the band, each inset by the tile
               padding, so the stats line up with the halves below. */}
-          <dl className="-mx-tile grid grid-cols-2 gap-y-tile-md md:grid-cols-4">
+          <dl className="-mx-tile mt-tile-md grid grid-cols-2 gap-y-tile-md md:grid-cols-4">
             {statItems.map(({ label, value }) => (
               <div key={label} className="flex flex-col gap-stack-sm px-tile">
                 <dt className="order-2 type-heading-h4">{label}</dt>
@@ -64,9 +66,10 @@ export default function Home() {
               </div>
             ))}
           </dl>
-          <div className="mt-tile-lg">
-            <ActionRow label="Open the bill tracker" href="/tracker" />
-          </div>
+          <p className="mt-tile-md type-heading-h5 text-tile-muted">
+            {stats.source}, updated{" "}
+            <time dateTime={stats.asOf}>{formatDate(stats.asOf)}</time>
+          </p>
         </Tile>
 
         {/* Stage 2: everything from here down slides over the bill band. */}

@@ -319,3 +319,182 @@
   - **Real post images** will go through the next/image optimizer; remote sources need `images.remotePatterns`.
   - Set `featured: true` on a post if Joey wants to choose it rather than defaulting to the newest.
   - The E3 TODO(joey) list is unchanged; no content file was touched.
+
+## E5: Article · 2026-10-02
+- Built:
+  - `src/app/posts/[slug]/page.tsx`:
+    * `generateStaticParams` (from getAllPosts, so drafts aren't generated in production);
+    * `dynamicParams = false`;
+    * `generateMetadata` (the title as "<title> · AI in Congress", the dek as the description);
+    * `notFound()` for unknown slugs.
+
+    Top to bottom: Topbar (article), the header Tile (mode from `CATEGORIES[category].headerMode`), the figure, editor's notes, the body + rail grid, Sources, then `<SiteEnd />`.
+  - `src/app/posts/[slug]/Rail.tsx`: the `<aside aria-labelledby="rail-heading">`: an amber cap, a stone body, one block per bill.
+  - `tests/article.spec.ts`:
+    * **For all 6 posts, at all 5 projects:** axe, and no horizontal scroll.
+    * **At 1440 only:**
+      * header text is full-strength tile fg and the back link is ≥ 4.5:1 (all 6 headers);
+      * the heading outline;
+      * the rail is docked from 75% to the right edge, 80 from the text, with its top level with the first paragraph;
+      * the rail is sticky at exactly its height + 80 and relative at + 79;
+      * below 1280 the rail scrolls away and sits before the article;
+      * there's no aside without bills.
+    * **At all 5 projects:** the keyboard walk (a 2px outline at every stop, nothing covered).
+    * Reduced motion, and no-JS.
+- Changed:
+  - **Carry-over (MDX):**
+    * Removed `@next/mdx`, `@mdx-js/loader` (only `@next/mdx` used it) and `@mdx-js/react` from package.json, and the `createMDX` wrapper from `next.config.ts`. Nothing imports `.mdx` files directly.
+    * Kept `src/mdx-components.tsx` (`compileMdx` passes its `useMDXComponents`), `@mdx-js/mdx` and `@types/mdx` (for `mdx/types`).
+    * The article body uses `compileMdx(post.body)`.
+  - **Carry-over (prose em):**
+    * `globals.css` gets `@property --prose-em`, registered as a `<length>`, so `1em` computes on `.prose-article` and inherits as px. A plain em on an h2's margin would resolve against the h2's own 38px.
+    * The rules: `.prose-article > * + *` and `blockquote > * + *` get 1.2em; `> :is(h2, h3):not(:first-child)` gets 1.6em; `li + li` gets 0.6em.
+    * `mdx-components.tsx` drops `space-y-24`, `mt-32 first:mt-0` and `space-y-12`.
+    * This also applies to /privacy and /accessibility (same values at 1440).
+    * `tests/scaling.spec.ts` measures "prose p gap" and "prose h2 gap" through a probe.
+  - `globals.css`: `--layout-article-gap` (60, and 52 at ≤991) and `--layout-image-overlap` (104, and 91 at ≤991), with `--spacing-*` aliases (`mt-article-gap`, `-mt-image-overlap`). Both are in the scaling test.
+  - `src/components/ActionRow.tsx`: a `small` prop (a heading-h5 label) for "Track this bill".
+  - `src/components/StickyFit.tsx`: reads `data-sticky-margin` (px), so a layer must fit `innerHeight` minus that margin. Home is unaffected (it sets no margin).
+  - `docs/token-log.md`: two lines. `CLAUDE.md`: E5 ticked.
+- Decisions:
+  - **Gap mapping (Figma → what we used, px at 1440):**
+    * pill → title: 29 → `stack` (24);
+    * title → dek: 42 → `tile` (40);
+    * back link → pill: `tile` (40), so the pill top is 112.5 from the header top (Figma 122);
+    * dek → meta: `tile-md` (80; Figma 101);
+    * body → Sources line: `article-gap` (60; Figma 67);
+    * line → "Sources": 41 → `tile` (40);
+    * "Sources" → list: 30 → 1.2em (24) via `.prose-article`;
+    * between sources: 0.6em (12);
+    * the list indent: 30 → `pl-[1.5em]`.
+  - **The h1 and the Sources h2 are untrimmed (`[text-box:none]`).** Figma's 29, 42 and 41 run box to box; with A5's trim, the visual gaps came out 10–15px tighter than the frame. Body h2s keep E3's trim.
+  - **The heading outline is h1 → rail h2 (+ bill h3s) → body h2s → Sources h2,** not the prompt's h1 → body h2s → rail h2.
+    * The prompt also asks for the aside before the article in the DOM at every width, and the two can't both hold. I kept the DOM order.
+    * Below 1280 the rail is visually first, and at 1280+ it sits beside the first paragraph, so reading it first is sensible.
+    * No levels are skipped. Bill titles are h3 (the prompt didn't name a level).
+  - **The rail is sticky only from xl (`max-xl:relative`).** A sticky grid item is bounded by the whole grid, not its own row, so below 1280 the full-width rail slid over the body and covered focused links. The keyboard test caught it at 1024 and 768.
+  - **At xl, the rail shares grid row 1 with the article:**
+    * the rail is `xl:col-start-4 xl:row-start-1 xl:self-start`;
+    * the article is `xl:col-span-full xl:row-start-1`, with its content on `mx-auto max-w-measure`.
+
+    So the measure stays centered on the page at every width, and the rail starts on the 75% line.
+  - **Rail cap:** `p-tile pb-stack`, which makes it 95 tall at 1440 (Figma 100), with the text at the bottom and no new token.
+  - **Rail dots:** an empty `before:` (16, `bg-current`), centered on the first line; dot → text is `gap-stack` (Figma 20).
+  - **"Track this bill"** keeps ActionRow's `justify-between`; Figma puts the arrow right after the text.
+  - **The byline uses the frontmatter `author`,** so it reads "By Joseph Holzman", not the prompt's "Joey Holzman". All six posts say "Joseph Holzman", and the footer disclaimer says "Joey". Joey's call which one.
+  - **The figure and body sit on a paper `data-tile` wrapper (no padding),** because `text-tile-muted` is transparent outside a tile (it's a registered `@property`). The figure and article get `px-tile`, so their measure matches the header's at narrow widths.
+  - **The meta dot is 24** (`size-24`; there's no 23 token).
+  - **Editor's notes:** a stone Tile, `mt-article-gap` below the figure, with notes `gap-stack` apart. There's no gap between a note's label and its text (not specified).
+  - **Sources:**
+    * the section is `.prose-article type-text-article`, so it reuses the body's link styles and em rhythm;
+    * links have `rel="noopener"`, like body links;
+    * the ↗ is inline (`align-middle`, `ml-4`) inside the link, after the sr-only "(external site)".
+- Verified:
+  - `npm run lint` clean; Prettier clean; `npm run test:content` 9/9; `npm run build` passes (5 posts SSG; the draft isn't generated). `npm run test:e2e`: 129 passed, 56 skipped (the 1440-only checks).
+  - **Production (`next start`):**
+    * the 5 posts return 200, with axe 0 at 1440, 991 and 390;
+    * titles and descriptions are right; robots is `noindex, nofollow`;
+    * the draft 404s;
+    * **Home's `networkidle` now resolves** (the E4 prefetch hang is gone).
+  - **Dev, all 6 posts:**
+    * axe 0 at 1440, 1280, 1024, 768 and 390;
+    * no muted text in any header (each header's text colors are exactly `--tile-fg`), so none on slate or sage;
+    * "All articles" is tile fg on every header, at ≥ 4.5:1.
+  - **Measured at 1440 (Figma in brackets):**
+    * the header runs 163–916.5, so 753.5 including the overlap. The Deepfakes title wraps to 3 lines on the 640 measure (Figma: 702, with 2 lines on 721);
+    * the back link is at 40, 40;
+    * the image is 400–1040 × 388.8 and overlaps the header by 104 (104);
+    * the rail is 1080–1440, its cap text 80 from the body text, its top level with the first paragraph (1547.3);
+    * the Deepfakes rail is 804 tall: sticky at 900 tall, relative below 884.
+  - **Mutation checks** (both files restored):
+    * without the sticky margin, the "+ 79 → relative" test fails;
+    * with the paragraph gap back on rem, the scaling test fails ("prose p gap: 16.8 at 992 → 19.2 at 991").
+  - **Screenshots** in `screens/e5/`:
+    * deepfakes-navy-{1440,1280,1024};
+    * lawmakers-volt-{1440,1280,1024};
+    * header-{executive-slate,states-sage,child-safety-blush,national-security-sand}-1440;
+    * sticky-rail-scrolled-1440;
+    * focus-{all-articles,track-this-bill}-1440;
+    * nojs-1440;
+    * `figma/article.png` (from the MCP).
+  - **Eclipse parity** (Chrome, same-origin iframes: Eclipse at 1440 / 1366 / 1280 / 1024 / 990 / 768 / 390; ours at those widths plus 992 / 991). Eclipse has no article page, so I compared the closest analogue, its sticky side-column h2:
+    * when stuck, its text is 39.9 / 37.6 / 35 / 35 from the top; our rail's cap text is 40 / 37.7 / 35 / 35 below the rail's top (sticky top 0, plus the tile padding). They match.
+    * Eclipse keeps it sticky down to 390 (top 20 at ≤990); ours stops below 1280, by spec.
+    * Ours: overlap 104 / 98 / 91 / 91 / 91 and paragraph gap 24 / 22.6 / 21.6 / 21.6 / 21.6. Neither grows at 991.
+    * **No token changed for parity.**
+- Open for next prompt:
+  - **`--measure` grows at the 991 root jump** (560 → 640), so the image and the text column widen as the window narrows. It's a pre-existing token, also used on /privacy and /accessibility. E6's tablet pass should decide; a ≤991 value of 35rem holds it at 560.
+  - **Classic scrollbars:** with a 15px scrollbar, the gap from the body text to the rail text is 76.3, not 80, because the measure centers on the content box while the root uses vw. Playwright's overlay scrollbars give exactly 80. Eclipse has the same vw behavior.
+  - **StickyFit in a background tab:** Chrome doesn't deliver ResizeObserver callbacks to a hidden tab, so nothing is marked until the tab renders. Home showed the same in a hidden tab. I didn't see it in a visible page; worth a manual look in E7.
+  - **Figma mismatches left as they are:**
+    * the pill top is 112.5 (122);
+    * dek → meta is 80 (101);
+    * meta → image is 40 (18): the tile padding;
+    * the rail cap is 95 (100);
+    * the "Track this bill" arrow sits at the end of the row;
+    * the topbar is 163 (160; E2's 82px nav row);
+    * no post has an image (placeholder, `alt=""`).
+  - **Not built (not in Figma yet):** Copy article link; Related / More analysis tiles (reuse `PostTile`); the chart treatment (`<Chart>` still renders the summary and table, and `<D3Chart>` renders nothing).
+  - **Mobile (E6):** the header, rail and Sources aren't tuned below 768, and the long titles run 3–4 lines at 40px.
+  - The E3 TODO(joey) list is unchanged; no content file was touched. The TAKE IT DOWN draft still shows its "Example correction for design review only" note.
+
+## E5.1: Home refinements (nav span + bill band layout) · 2026-10-02
+- Built: nothing new. `tests/home.spec.ts` gains "ink covers the source and stats first, the tracker row last" (1440 only). `tests/scaling.spec.ts` gains "the topbar nav never grows as the window narrows" (on /tracker: link font, link height, nav width ≥ 768, nav left on the 50% line); the grow check moved into a shared `grown()` helper.
+- Changed:
+  - `src/components/Topbar.tsx`: the nav is `w-full md:w-1/2`, so from md it runs from the 50% line to the right inset (720–1400 at 1440). Below md it drops under the logo, full width. **The link items are exactly as in E2** (heading-h5, `items-start`, `pt-stack-sm`, `gap-x-stack gap-y-stack-sm`).
+  - `src/app/globals.css`: `--nav-cols` → `repeat(3, minmax(0, 1fr))` (was 192 / 199 / 192).
+  - `src/app/page.tsx`, bill band, top to bottom:
+    * the header row `grid md:grid-cols-2 gap-y-stack items-start`: the h2 on the left; on the right, a `md:grid-cols-(--nav-cols) md:gap-x-stack` grid with the ActionRow at `md:col-start-3`, under "Joey Holzman ↗";
+    * the `<dl>` with `mt-tile-md`;
+    * the source line (heading-h5, muted) with `mt-tile-md`.
+
+    The `min-h-tile-lg` header and the bottom ActionRow are gone. Below md the action row is full width under the heading; the DOM order is the visual order.
+  - `src/components/ActionRow.tsx`: the label is always `type-heading-h5`, the nav links' type (it was heading-h4, with h5 behind a `small` prop). E5's `small` prop is removed, along with its one use in `src/app/posts/[slug]/Rail.tsx`. This changes "Read more" on the featured and grid tiles, and "Open the bill tracker". "Track this bill" was already h5.
+  - `docs/token-log.md`: two lines. `CLAUDE.md`: E5.1 added to Progress and ticked.
+- Decisions (Joey's mid-session calls, in order):
+  1. **Nav parity was measured and built, then reverted** to E2's link styling ("revert the navlink buttons to how they were originally but keep the span"). The span and equal columns stayed. What I'd built: `type-ui-nav`, 40-tall links (a new `--nav-link` token, 40 → 35 at ≤991), `gap-x-tile` and no row gap, which gave Eclipse's 80 nav row. `--nav-link` was deleted.
+  2. **"Open the bill tracker" spans one nav column, not two.** I chose the last one, so its right edge stays on the right inset.
+  3. **"All of the navlink style buttons used outside of the navbar should have the same typography"** → every ActionRow label is heading-h5. **This deviates from Part A** A5, where heading-h4 is listed for action-row labels; Part A should be updated. Only the type changed: the row keeps its own `items-center` and `gap-stack`, where nav links are `items-start` with no gap.
+  - **Eclipse, measured live** (Chrome, same-origin iframes at 1440 / 1280 / 1024; client width 1425 / 1265 / 1009). It matches the audit:
+    * `nav_link-text` is 1.125rem / 1.11 / 500 with normal tracking (18/19.98 at 1440; 15.75/17.48 at 1280 and 1024);
+    * link padding is 0.625rem 0, so links are 40 / 35 / 35 tall with row gap 0;
+    * the line is an absolutely positioned 1px div (navy, opacity 1) that adds no height;
+    * the columns are `1fr 1fr` with a 2.5rem gap (40 / 35 / 35);
+    * the block starts at 50% + half the container's 40 gap (732.5 in 1425), not on the 50% line;
+    * the ↗ is 12px, flush right, vertically centered;
+    * there's no hover rule or Webflow interaction on the nav links, and focus is the UA `auto` outline.
+  - **Ours vs Eclipse** (at 1440):
+    * link type 20/28/600 vs 18/20/500;
+    * links 37 tall vs 40, so the nav block is 82 vs 80;
+    * column gap 24 vs 40;
+    * ↗ 24 (A8) vs 12;
+    * 3 columns vs 2 (we have 5 links);
+    * our left edge is on the 50% line (720) vs Eclipse's 740.
+
+    The span and the equal columns match Eclipse's model. No parity token change survived.
+  - **Nav width grows 461 → 471.5 at 992 → 991.** The nav spans from the 50% line to the tile's right inset, and the inset steps 35 → 24 there (A7), the same step that widens every tile's content box. The scaling test exempts only that step and asserts the left edge stays on the 50% line at every width ≥ 768. Link font (17.5 → 16) and height (32.5 → 31.4) still shrink there.
+  - The half grid has no column gap, so its right column starts exactly on the 50% line. Stacked below md, the heading and action row are `gap-y-stack` apart (24 / 16; not specified).
+- Verified:
+  - **Checks:** `npm run lint` clean; Prettier clean; `npm run build` passes. `npm run test:e2e`: 131 passed, 64 skipped (the 1440-only checks). That includes axe 0 on `/` at 1440, 1280, 1024, 768 and 390, and on every article and /tracker at all 5. The keyboard walk on Home is still skip → logo → 5 nav → "Open the bill tracker" → featured → grid → email → Submit → footer, each with a visible 2px ring; the expected order already matched. `tests/shell.spec.ts` (nav targets ≥ 24) and `tests/scaling.spec.ts` pass.
+  - **Mutation check:** on the interim 40 → 35 nav-link version, removing the ≤991 value made the nav test fail ("link height: 35 at 992 → 40 at 991").
+  - **Nav left edge on the 50% line:** 720 (1440), 683 (1366), 640 (1280), 512 (1024), 496 (992), 495.5 (991), 384 (768).
+  - **The action row's edges equal nav column 3's:** 1189.3–1400 (1440), 1128.3–1328.3 (1366), 1057.3–1245 (1280), 844–989 (1024), 820.5–967 (991), 634.7–744 (768).
+  - **The ActionRow label's type is identical to the nav link's at every width:** 20/28/600/−0.3px at 1440, 18.84 at 1366, 17.5 at 1280 and 1024, 16/22.4 at ≤991.
+  - **Bill band height:** 1440 is **450.1** (was 517). Also 1366 423.6, 1280 394.3, 1024 421.4, 991 347.6, 768 369.9, 390 569.3.
+  - **Featured band on first load:** at **1440×900, 185.5px** shows (was about 118.6: 900 − 264.4 − 517). At **1366×768, 94.5px** shows (was about 31, derived by scaling 517 and the header to the 15.075 root).
+  - **Cascade at 1440×900:** the band sticks at scroll 264.4. Frames at 264, 340, 480, 600 and 660 show ink covering the source line, then the stats, then "Open the bill tracker" last. The new test asserts it.
+  - **Screenshots:**
+    * `screens/e5/nav/`: eclipse-{1440,1024}, ours-{1440,1024}, compare-{1440,1024} (Eclipse above, ours below);
+    * `screens/e5.1/`: home-{1440,1366,1024,768,390}, home-1440-full, cascade-1440-{264,340,480,600,660}.
+  - **No Figma comparison:** the frame predates this redesign.
+- Open for next prompt:
+  - **"Open the bill tracker" wraps in its one column:** 2 lines from 1440 to 991, 3 at 768. At 20px the label needs about 190, plus the 24 gap and 24 icon, and the column is 211 at 1440. This makes the band 25 taller than the two-column version (425). Options, Joey's call:
+    * a shorter label ("Bill tracker");
+    * drop the ActionRow's label → icon gap to match the nav links (still about 2px short at 1440);
+    * accept the wrap.
+  - **"Joey Holzman ↗" wraps** in the nav from 768 to about 900, and at 390. That's for E6, which already plans 2 nav columns on mobile.
+  - **Footer nav left as it is** (heading-h5, mint, `grid-cols-3`, its group starting at 50% + 112 per Figma). For consistency it could start on the 50% line with `--nav-cols` and `gap-x-stack`. That's Joey's call, since Figma puts it at 832.
+  - **Pre-existing:**
+    * `tests/article.spec.ts:132` has a TS error (`offsetHeight` on `HTMLElement | SVGElement`). Playwright still runs it.
+    * The topbar row's `min-h-80` grows 70 → 80 at 991 (`spacing-80` is rem). It's not visible, because the nav is 72 there.
+  - The E3 TODO(joey) list is unchanged; no content file was touched.

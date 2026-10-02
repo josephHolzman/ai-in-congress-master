@@ -142,6 +142,40 @@ test.describe("sticky cascade", () => {
     expect(await topmostAt(page, 100)).toBe("ink");
   });
 
+  test("ink covers the source and stats first, the tracker row last", async ({
+    page,
+  }, { project }) => {
+    onlyAt1440(project.name);
+    await page.mouse.move(0, 0);
+    // Scroll until the featured band's top sits just below the action row of
+    // the (stuck) bill band.
+    const y = await page.evaluate(() => {
+      const band = document.querySelector("main > [data-sticky]")!;
+      const row = band.querySelector('a[href="/tracker"]')!;
+      const rowBottom =
+        row.getBoundingClientRect().bottom - band.getBoundingClientRect().top;
+      return (
+        band.nextElementSibling!.getBoundingClientRect().top - rowBottom - 1
+      );
+    });
+    await page.evaluate((y) => window.scrollTo(0, y), y);
+    const band = page.locator("main > [data-sticky]");
+    expect(await band.evaluate((el) => el.getBoundingClientRect().top)).toBe(0);
+    /** The topmost element at the center of `selector` is in the bill band. */
+    const showing = (selector: string) =>
+      band.locator(selector).evaluate((el) => {
+        const box = el.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          box.left + box.width / 2,
+          box.top + box.height / 2,
+        );
+        return !!hit && el.closest("[data-sticky]")!.contains(hit);
+      });
+    expect(await showing('a[href="/tracker"]')).toBe(true);
+    expect(await showing("dl")).toBe(false);
+    expect(await showing(":scope > p")).toBe(false);
+  });
+
   test("a focused nav link comes to the front", async ({ page }, {
     project,
   }) => {
