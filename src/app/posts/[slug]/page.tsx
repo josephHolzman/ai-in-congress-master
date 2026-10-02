@@ -64,7 +64,7 @@ export default async function PostPage({ params }: PageProps<"/posts/[slug]">) {
             <p className="mt-tile type-heading-h4 text-tile">
               {post.description}
             </p>
-            <div className="mt-tile-md flex flex-wrap items-center justify-between gap-x-stack gap-y-stack-sm type-ui-nav text-tile">
+            <div className="mt-tile-md flex flex-wrap items-center justify-between gap-x-stack gap-y-stack-sm type-ui-nav text-tile max-md:flex-col max-md:items-start">
               <p className="flex items-center gap-12">
                 <span
                   aria-hidden
@@ -155,7 +155,10 @@ export default async function PostPage({ params }: PageProps<"/posts/[slug]">) {
                     <ol className="list-decimal pl-[1.5em] marker:text-tile-muted">
                       {post.sources.map(({ label, href }) => (
                         <li key={href}>
-                          <a href={href} rel="noopener">
+                          {/* An inline box is only the font's 23px content
+                              area; the padding takes the target past 24
+                              without moving the line. */}
+                          <a href={href} rel="noopener" className="py-4">
                             {label}
                             <span className="sr-only"> (external site)</span>
                             <ArrowUpRight

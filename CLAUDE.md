@@ -252,5 +252,5 @@ Keep it short.
 - [x] E4: Home (HomeNew)
 - [x] E5: Article
 - [x] E5.1: Home refinements (nav span + bill band layout)
-- [ ] E6: mobile first pass
+- [x] E6: mobile first pass
 - [ ] E7: QA pass

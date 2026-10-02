@@ -25,6 +25,8 @@ const layout = [
   "article-gap",
   "image-overlap",
 ];
+// Component sizes, resolved as a width (--logo-footer is a % below 768).
+const sizes = ["logo-topbar", "logo-footer", "measure"];
 
 /** Every value that's larger than at the next wider width. */
 const grown = (rows: Record<string, number>[]) => {
@@ -54,7 +56,7 @@ test("type and layout tokens never grow as the window narrows", async ({
     await page.setViewportSize({ width, height: 900 });
     rows.push(
       await page.evaluate(
-        ({ types, layout }) => {
+        ({ types, layout, sizes }) => {
           const px = (v: string) => Math.round(parseFloat(v) * 100) / 100;
           const row: Record<string, number> = {
             root: px(getComputedStyle(document.documentElement).fontSize),
@@ -67,9 +69,14 @@ test("type and layout tokens never grow as the window narrows", async ({
             probe.style.paddingTop = `var(--layout-${l})`;
             row[l] = px(getComputedStyle(probe).paddingTop);
           }
+          probe.style.paddingTop = "";
+          for (const s of sizes) {
+            probe.style.width = `var(--${s})`;
+            row[s] = px(getComputedStyle(probe).width);
+          }
+          probe.style.width = "";
           // Prose rhythm is in em of text-article (globals.css, .prose-article).
           probe.className = "prose-article type-text-article";
-          probe.style.paddingTop = "";
           probe.innerHTML = "<p>a</p><p>b</p><h2>c</h2>";
           const [, p, h2] = probe.children;
           row["prose p gap"] = px(getComputedStyle(p).marginTop);
@@ -82,7 +89,7 @@ test("type and layout tokens never grow as the window narrows", async ({
           }
           return row;
         },
-        { types, layout },
+        { types, layout, sizes },
       ),
     );
   }
@@ -105,37 +112,52 @@ test("type and layout tokens never grow as the window narrows", async ({
   }
 });
 
-test("the topbar nav never grows as the window narrows", async ({
+test("the shell never grows as the window narrows", async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== "1440x900");
 
   await page.goto("/tracker");
-  const nav = page.getByRole("navigation", { name: "Main" });
   const rows: Record<string, number>[] = [];
   for (const width of widths) {
     await page.setViewportSize({ width, height: 900 });
     rows.push(
-      await nav.evaluate((nav, width) => {
+      await page.evaluate((width) => {
         const px = (v: number) => Math.round(v * 100) / 100;
-        const link = nav.querySelector("a")!;
-        const box = nav.getBoundingClientRect();
+        const box = (selector: string) =>
+          document.querySelector(selector)!.getBoundingClientRect();
+        const nav = box('nav[aria-label="Main"]');
+        const link = document.querySelector('nav[aria-label="Main"] a')!;
+        // The nav's columns, from the first one's left to the last one's right.
+        const items = [
+          ...document.querySelectorAll('nav[aria-label="Main"] li'),
+        ].map((li) => li.getBoundingClientRect());
         return {
           "link font": px(parseFloat(getComputedStyle(link).fontSize)),
           "link height": px(link.getBoundingClientRect().height),
+          "topbar logo": px(box("header svg").width),
+          "footer logo": px(box("footer svg").width),
+          "email input height": px(box("#newsletter-email").height),
+          "submit height": px(box('button[type="submit"]').height),
           // Below md the nav drops under the logo and runs full width.
           ...(width >= 768 && {
-            "nav width": px(box.width),
-            "off the 50% line": px(Math.abs(box.left - innerWidth / 2)),
+            "nav columns": px(
+              Math.max(...items.map((r) => r.right)) - items[0].left,
+            ),
+            "off the 50% line": px(Math.abs(nav.left - innerWidth / 2)),
           }),
         };
       }, width),
     );
   }
-  // The nav runs from the 50% line to the tile's right inset, and the inset
-  // steps 35 → 24 at 991 (A7), so that one step widens it by the inset change.
-  expect(
-    grown(rows).filter((g) => !/^nav width: .+ at 992 → .+ at 991$/.test(g)),
-  ).toEqual([]);
+  console.table(
+    Object.fromEntries(
+      Object.keys(rows[0]).map((key) => [
+        key,
+        Object.fromEntries(widths.map((w, i) => [`${w}px`, rows[i][key]])),
+      ]),
+    ),
+  );
+  expect(grown(rows)).toEqual([]);
   for (const row of rows) expect(row["off the 50% line"] ?? 0).toBe(0);
 });

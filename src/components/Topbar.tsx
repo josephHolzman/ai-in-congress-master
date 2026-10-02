@@ -33,11 +33,15 @@ export function Topbar({ variant, current, children }: TopbarProps) {
         </Link>
         {/* From md, the nav is the right half: 50% of the content box ends on
             the right inset, so it starts on the 50% line. Below md it drops
-            under the logo, full width. */}
+            under the logo, full width, in 2 columns with the external link
+            last (Joey's call, E6: CSS order, so desktop is untouched). */}
         <nav aria-label="Main" className="w-full md:w-1/2">
           <ul className="grid grid-cols-(--nav-cols) gap-x-stack gap-y-stack-sm">
             {NAV_LINKS.map(({ label, href, external }) => (
-              <li key={label}>
+              <li
+                key={label}
+                className={external ? "max-md:order-last" : undefined}
+              >
                 <Link
                   href={href}
                   aria-current={href === current ? "page" : undefined}

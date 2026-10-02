@@ -14,12 +14,16 @@ export function Footer() {
         />
         <div>
           <nav aria-label="Footer">
-            <ul className="grid grid-cols-3 gap-x-stack-sm gap-y-32">
+            <ul className="grid grid-cols-3 gap-x-stack-sm gap-y-32 max-md:grid-cols-2">
               {NAV_LINKS.map(({ label, href, external }) => (
-                <li key={label}>
+                // As in the Topbar: the external link goes last on mobile.
+                <li
+                  key={label}
+                  className={external ? "max-md:order-last" : undefined}
+                >
                   <Link
                     href={href}
-                    className="inline-flex items-center gap-4 type-heading-h5 text-mint"
+                    className="inline-flex min-h-24 items-center gap-4 type-heading-h5 text-mint"
                   >
                     {label}
                     {external && (

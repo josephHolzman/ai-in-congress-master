@@ -498,3 +498,45 @@
     * `tests/article.spec.ts:132` has a TS error (`offsetHeight` on `HTMLElement | SVGElement`). Playwright still runs it.
     * The topbar row's `min-h-80` grows 70 → 80 at 991 (`spacing-80` is rem). It's not visible, because the nav is 72 there.
   - The E3 TODO(joey) list is unchanged; no content file was touched.
+
+## E6: Mobile first pass (≤767), plus tablet sanity checks · 2026-10-02
+- Built: nothing new. Scratch scripts for the screenshots, reflow, text-spacing and target checks are outside the repo.
+- Changed:
+  - `src/app/globals.css`:
+    * a ≤767 step in six type utilities (display-h1/h2/h3, heading-h4/h5, text-large);
+    * a ≤767 `:root` block: `--layout-image-overlap` 56, `--nav-cols` 2 columns, `--logo-footer` 60%;
+    * ≤991 holds: `--logo-topbar` 9rem, `--logo-footer` 35.4375rem, `--nav-cols` repeat(3, minmax(0, 8.9375rem)), `--measure` 35rem.
+  - `src/components/Topbar.tsx`, `Footer.tsx`: the external link's `<li>` gets `max-md:order-last`; the footer list is `max-md:grid-cols-2`, and footer links are `min-h-24` at every width (they were 22.4 tall at 768–991: a target bug).
+  - `src/components/NewsletterBand.tsx`: input and Submit padding `px-tile py-stack` (was `px-40 py-24`); below md the row is a column, and the text is `max-md:type-heading-h4`. Submit also gets `max-md:[text-box:none]`: display-h3's cap trim made it 43.6 tall against the input's 52.8 once it stopped stretching to the input's height.
+  - `src/app/page.tsx`: the statement is `max-md:mt-32`. The bill band is `max-md:flex-col`, its header grid `max-md:contents`, and CSS order gives heading → source line (`mt-stack`) → action row (`mt-tile`) → stats (`mt-tile-md`, `gap-y-32`). The featured image is `aspect-4/3` below md (was aspect-video).
+  - `src/app/posts/[slug]/page.tsx`: the meta row is `max-md:flex-col max-md:items-start` (always 2 lines). Source links get `py-4`: single-line ones were 23 tall (an inline box is the font's content area, not the line), and the padding takes them past 24 without moving the line. That applies at every width (a bug fix).
+  - `tests/scaling.spec.ts`: the token test also probes `--logo-topbar`, `--logo-footer` and `--measure`. The nav test becomes "the shell never grows as the window narrows" on /tracker: link font and height, both logos, the input and Submit heights, and the nav's column span (≥ 768). The E5.1 exemption for the nav width at 992 → 991 is gone.
+  - `docs/token-log.md` (5 lines, carry to Figma), `docs/build-prompts.md` (A5 mobile-step note, A7 measure and image-overlap notes), `CLAUDE.md` (E6 ticked).
+- Decisions:
+  - **Mobile type:** Eclipse is identical at 767, 479 and 390 (its 479 query has no type rules), so there's one step. Values are in the token log. text-medium keeps 18: Eclipse's 15 doesn't shrink at 767, and Joey approved 18 over 15 in E1.1. text-article stays 18/28.8.
+  - **Nav order (Joey's call this session):** CSS `order` on mobile only, in Topbar and footer. Desktop is unchanged. On mobile, Tab reaches "Joey Holzman ↗" third but it shows last.
+  - **The ≤767 queries are `@media (width < 48rem)`, not `max-width: 767px`.** In Chrome, a 768 iframe has a fractional width just under 768. There, `max-md:` (Tailwind: `width < 48rem`) matched but `max-width: 767px` didn't, giving mobile layout with tablet type and 3 nav columns. Browser zoom produces the same fractional widths. Now tokens and utilities switch together.
+  - **Nav hold at 991:** the prompt asked for a `--nav-cols` ≤991 value, so the columns cap at 143 (3 × 143 + 2 × 16 = 461, its 992 span). The nav still starts on the 50% line, but from about 970 to 991 it, and the bill band's action row under it, end up to 10.5 short of the right inset (957 vs 967 at 991).
+  - **Already in place, confirmed rather than changed:** the logo on its own row; the featured band at one column with no min-height and a 56 gap (`gap-tile-md`; `justify-between` does nothing without a min-height); grid tiles at one column with only a bottom border; the article header pad 24, the measure full width below 560 + 48, "All articles" above the pill, the rail before the body, Sources full width; no sticky below 768 (the CSS guard is `min-width: 768px`, and both layers compute `relative` at 390 and 768).
+- Verified:
+  - `npm run lint` clean; Prettier clean; `npx tsc --noEmit` clean; `npm run build` passes; `npm run test:content` 9/9; `npm run test:e2e`: 131 passed, 64 skipped (unchanged totals; axe 0 and the keyboard walks on Home, every article and /tracker at all 5 projects).
+  - **Scaling test:** passes, with the table at 11 widths, for example 992 → 991: topbar logo 144.38 → 144, footer logo 567 → 567, measure 560 → 560, input 78.73 → 68, nav columns 461 → 461. **Mutation checks** (file restored): without the ≤991 `--logo-topbar` it fails ("logo-topbar: 144.38 at 992 → 165 at 991"); with display-h3's ≤767 line height at 1.6 it fails ("display-h3 lh: 36 at 768 → 38.4 at 767").
+  - **Reflow:** 0px horizontal overflow on /, /tracker, /privacy, /accessibility and all 6 posts at 320, and at 1280 @ 400% (320 × 200 at 4× DPR). 0 at 768, 800, 900, 991, 992, 1024, 1100, 1200 and 1279 too.
+  - **Text spacing (1.4.12):** line height 1.5, paragraphs 2em, letters 0.12em, words 0.16em on all 10 pages at 390, 768 and 1280: no clipped box, nothing off screen, no overflow. Checked by eye at 390 (`screens/e6/text-spacing-*-390.png`).
+  - **Targets:** every link, button and input on all 10 pages at 390, 768 and 1024 is ≥ 24 × 24. Inline body links are exempt; stretched title links are measured by their tile.
+  - **Tablet (768–1279):** the grid is 2 columns, the measure is centered (232–792 at 1024), and the rail is a full-width block before the body.
+  - **Measured at 390:** statement 34/34, bill heading 24/27.6, stats 40, labels 16/20.8, nav 14/19.6 in 2 columns of 154.7, stat row gap 32, input and Submit 52.8 tall, full width, 16 apart, footer logo 60% (195 at a 373 client), the article image 24–366 overlapping the header by 56, the meta row on 2 lines.
+  - **Screenshots:** `screens/e6/`: home, deepfakes-navy and lawmakers-volt at 390 / 768 / 1024; text-spacing-{home,what-the-take-it-down,rep-french-hill-ai-p}-390; home-991-top; lawmakers-volt-390-top.
+  - **Eclipse parity** (Chrome, same-origin iframes at 1024, 990, 767, 479 and 390 on the archive; ours at 768 and 390 live): root 16 on both below 992; display and heading sizes now match Eclipse's ≤767 values. **Differences kept on purpose:** tile pad 24 vs 20 (Part A); nav 2 columns vs 1 (prompt); newsletter field 52.8 vs 44 tall, 16 vs 10 apart (prompt); input 68 vs 50 at 768 (our Figma field type is larger, E2). No parity token change beyond the type step.
+  - **Not done:** a Figma compare (the mobile frames aren't designed yet).
+- Open for next prompt:
+  - **Design calls left alone:**
+    * Grid tiles keep `--post-tile` (308) as a min-height on mobile, so short titles leave a tall empty gap above "Read more".
+    * The nav and action row end 10.5 short of the inset near 991 (above).
+    * "Joey Holzman ↗" and "Open the bill tracker" still wrap at 768–900 (E5.1).
+    * The mobile tab order puts "Joey Holzman ↗" third while it shows last (Joey's call).
+    * The footer's `gap-x-stack-sm` (8) and `gap-y-32` are unchanged on mobile.
+    * Featured-band image at 4/3 is the placeholder.
+  - **Still growing at 991, not in this prompt's list:** `--disclaimer` (35rem: 490 → 560) and the topbar row's `min-h-80` (70 → 80; hidden behind the 72 nav). Same fix as the others if wanted.
+  - In dev, Next's dev-tools badge sits over the featured title and a stat at 390 (the screenshots show it); production doesn't render it.
+  - The E3 TODO(joey) list is unchanged; no content file was touched.

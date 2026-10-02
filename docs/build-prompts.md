@@ -144,6 +144,8 @@ Font: **Switzer Variable**, loaded locally. Letter spacing is in **em**, convert
 - Links are `blue` with a 1px underline at a 3px offset. On hover, the link turns navy and the underline goes to 2px.
 - No justified text and no hyphenation.
 
+**Mobile step (≤ 767, E6):** Eclipse's live ≤ 767 sizes where they're smaller than the ≤ 991 column: display-h1 40/40, display-h2 34/34, display-h3 24/27.6, heading-h4 16/20.8, heading-h5 14/19.6, text-large 18/23.4. The other styles keep their ≤ 991 values. The query is Tailwind's `md` condition (`width < 48rem`), so it switches with the `max-md:` utilities.
+
 **Display text:** apply `text-box: trim-both cap alphabetic` (where supported) to `display-*` styles.
 
 ## A6. Fluid root (Eclipse's model)
@@ -171,10 +173,12 @@ The `max()` floor changes nothing at the default 16px browser font size. With a 
 | `layout-stack` | 24 | 16 |
 | `layout-stack-sm` | 8 | 8 |
 
+`layout-image-overlap` (E5) is 104 / 91, and 56 at ≤ 767 (E6).
+
 The layout tokens step down at 991, with the type (A5): the root jumps 14 → 16px there, so a token that held its desktop rem would grow as the window narrows (tile-top-md 70 → 80). Eclipse has the same flaw (`top-padding-5` 70 → 80 at 991; `pad-top-large` has no ≤ 991 rule), so its values aren't used; these are the former ≤ 767 values. The `space-*` primitives are rem and still step up at 991 (for example, `space-40` 35 → 40); use a layout token where a value must not grow.
 
 - **Grid:** quarters at 0 / 360 / 720 / 1080 / 1440 (so 25%, 50% and 75%). There is no column gutter; the 40 inset lives inside each tile.
-- **Reading measure:** `--measure` = 640 (40rem), from 400 to 1040, which is quarters 2–3 inset by 40.
+- **Reading measure:** `--measure` = 640 (40rem), from 400 to 1040, which is quarters 2–3 inset by 40. At ≤ 991 it's 35rem (560), its 992 size, so it doesn't widen at the root jump.
 - **Lines:** 1px. Tile dividers use `tile-line`. Action-row lines use `tile-fg` at full strength.
 - **Pills:** padding 4 × 24, fully rounded, 1px border.
 

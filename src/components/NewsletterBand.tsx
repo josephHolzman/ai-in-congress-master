@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { Tile } from "@/components/Tile";
 
-// Paper on signal is 3.5:1, so every text element here is display-h3 or
-// larger (≥ 32px at every width), never heading-h4 (A3).
+// Paper on signal is 3.5:1, so every text element on the band is display-h3
+// or larger (≥ 24px at every width), never heading-h4 (A3). The input and
+// button are their own paper and ink blocks, so they can go smaller.
+// Their padding is layout tokens, so they don't grow at the 991 root jump.
 export function NewsletterBand() {
   const [status, setStatus] = useState("");
 
@@ -32,7 +34,7 @@ export function NewsletterBand() {
         <label htmlFor="newsletter-email" className="block type-display-h3">
           Email address
         </label>
-        <div className="mt-stack-sm flex flex-wrap gap-stack">
+        <div className="mt-stack-sm flex flex-wrap gap-stack max-md:flex-col">
           <input
             id="newsletter-email"
             type="email"
@@ -40,13 +42,13 @@ export function NewsletterBand() {
             autoComplete="email"
             placeholder="name@domain.com"
             data-tile="paper"
-            className="min-w-0 grow rounded-full px-40 py-24 type-display-h3 placeholder:text-tile-muted"
+            className="min-w-0 grow rounded-full px-tile py-stack type-display-h3 placeholder:text-tile-muted max-md:type-heading-h4"
           />
           <button
             type="submit"
             data-tile="ink"
             data-interactive
-            className="rounded-full px-40 py-24 type-display-h3"
+            className="rounded-full px-tile py-stack type-display-h3 max-md:type-heading-h4 max-md:[text-box:none]"
           >
             Submit
           </button>

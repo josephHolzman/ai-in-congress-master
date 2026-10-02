@@ -27,7 +27,7 @@ export default function Home() {
       <StickyFit />
       <Topbar variant="home">
         {/* Trim only the top: Figma's 24 below is from the untrimmed box. */}
-        <h1 className="mt-(--statement-top) type-display-h2 [text-box:trim-start_cap_alphabetic]">
+        <h1 className="mt-(--statement-top) type-display-h2 [text-box:trim-start_cap_alphabetic] max-md:mt-32">
           See how Congress is handling AI policy.
         </h1>
       </Topbar>
@@ -38,16 +38,19 @@ export default function Home() {
           as="section"
           aria-labelledby="bills-heading"
           data-sticky
-          className="z-1 focus-within:z-3"
+          className="z-1 focus-within:z-3 max-md:flex max-md:flex-col"
         >
           {/* The action row sits on the nav's columns (Topbar), in the
               last one, so its edges line up under it at every width. It's
-              at the top, so the featured band covers it last. */}
-          <div className="grid items-start gap-y-stack md:grid-cols-2">
+              at the top, so the featured band covers it last. Below md the
+              header dissolves into the band's column so the source line can
+              sit under the heading (CSS order: it isn't focusable, so the
+              tab order is unchanged). */}
+          <div className="grid items-start gap-y-stack max-md:contents md:grid-cols-2">
             <h2 id="bills-heading" className="type-display-h3">
               AI bills in the {stats.congress} Congress
             </h2>
-            <div className="md:grid md:grid-cols-(--nav-cols) md:gap-x-stack">
+            <div className="max-md:order-2 max-md:mt-tile md:grid md:grid-cols-(--nav-cols) md:gap-x-stack">
               <div className="md:col-start-3">
                 <ActionRow label="Open the bill tracker" href="/tracker" />
               </div>
@@ -55,7 +58,7 @@ export default function Home() {
           </div>
           {/* Columns are true quarters of the band, each inset by the tile
               padding, so the stats line up with the halves below. */}
-          <dl className="-mx-tile mt-tile-md grid grid-cols-2 gap-y-tile-md md:grid-cols-4">
+          <dl className="-mx-tile mt-tile-md grid grid-cols-2 gap-y-tile-md max-md:order-3 max-md:gap-y-32 md:grid-cols-4">
             {statItems.map(({ label, value }) => (
               <div key={label} className="flex flex-col gap-stack-sm px-tile">
                 <dt className="order-2 type-heading-h4">{label}</dt>
@@ -66,7 +69,7 @@ export default function Home() {
               </div>
             ))}
           </dl>
-          <p className="mt-tile-md type-heading-h5 text-tile-muted">
+          <p className="mt-tile-md type-heading-h5 text-tile-muted max-md:order-1 max-md:mt-stack">
             {stats.source}, updated{" "}
             <time dateTime={stats.asOf}>{formatDate(stats.asOf)}</time>
           </p>
@@ -101,7 +104,7 @@ export default function Home() {
               </div>
             </Tile>
             {/* The image fills whatever height the text tile sets. */}
-            <div className="relative aspect-video bg-stone md:aspect-auto">
+            <div className="relative aspect-4/3 bg-stone md:aspect-auto">
               <Image
                 src={featured.image?.src ?? "/images/placeholder.svg"}
                 alt={featured.image?.alt ?? ""}

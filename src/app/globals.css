@@ -103,6 +103,24 @@
     --band-featured: 44rem; /* 704 */
     --post-tile: 19.25rem; /* 308 */
     --dek: 26.75rem; /* 428 */
+    /* Shell sizes and the measure hold at their 992 size (144.4 / 567 / 560;
+       nav columns 139.7 with a 21 gap, so 3 × 143 + 2 × 16 ≤ 461) instead of
+       growing with the root. */
+    --logo-topbar: 9rem; /* 144 */
+    --logo-footer: 35.4375rem; /* 567 */
+    --nav-cols: repeat(3, minmax(0, 8.9375rem)); /* ≤ 143 each */
+    --measure: 35rem; /* 560 */
+  }
+}
+
+/* Mobile first pass (E6). The ≤767 queries are Tailwind's md condition
+   (width < 48rem), so tokens and max-md: utilities switch together, even at
+   the fractional widths browser zoom produces. */
+@media (width < 48rem) {
+  :root {
+    --layout-image-overlap: var(--spacing-56);
+    --nav-cols: repeat(2, minmax(0, 1fr));
+    --logo-footer: 60%;
   }
 }
 
@@ -244,7 +262,8 @@
 
 /* Type (A5). Line heights are Figma's px pairs as unitless ratios.
    The root jumps 14 → 16px at 991, so every style steps down there (A5,
-   ≤991 column) to keep type from growing as the window narrows. */
+   ≤991 column) to keep type from growing as the window narrows. The ≤767
+   step takes Eclipse's live ≤767 sizes where they're smaller (E6). */
 @utility type-display-h1 {
   font-family: var(--font-switzer);
   font-size: 5.625rem;
@@ -256,6 +275,9 @@
   @media (max-width: 991px) {
     font-size: 3.75rem;
   }
+  @media (width < 48rem) {
+    font-size: 2.5rem;
+  }
 }
 @utility type-display-h2 {
   font-family: var(--font-switzer);
@@ -266,6 +288,9 @@
   text-box: trim-both cap alphabetic;
   @media (max-width: 991px) {
     font-size: 2.5rem;
+  }
+  @media (width < 48rem) {
+    font-size: 2.125rem;
   }
 }
 @utility type-display-h3 {
@@ -279,6 +304,10 @@
     font-size: 2rem;
     line-height: calc(36 / 32);
   }
+  @media (width < 48rem) {
+    font-size: 1.5rem;
+    line-height: 1.15;
+  }
 }
 @utility type-heading-h4 {
   font-family: var(--font-switzer);
@@ -290,6 +319,9 @@
     font-size: 1.25rem;
     line-height: calc(26 / 20);
   }
+  @media (width < 48rem) {
+    font-size: 1rem;
+  }
 }
 @utility type-heading-h5 {
   font-family: var(--font-switzer);
@@ -299,6 +331,9 @@
   letter-spacing: -0.015em;
   @media (max-width: 991px) {
     font-size: 1rem;
+  }
+  @media (width < 48rem) {
+    font-size: 0.875rem;
   }
 }
 @utility type-text-large {
@@ -310,6 +345,9 @@
   @media (max-width: 991px) {
     font-size: 1.25rem;
     line-height: calc(26 / 20);
+  }
+  @media (width < 48rem) {
+    font-size: 1.125rem;
   }
 }
 @utility type-text-medium {
