@@ -68,6 +68,15 @@
      padding is symmetric, so 50% of its content box lands on that line. */
   --footer-cols: calc(50% + 7rem) minmax(0, 1fr);
   --disclaimer: 35rem;
+
+  /* Home sizes from Figma (px at 1440). */
+  --band-featured: 50.4375rem; /* 807 */
+  --post-tile: 22.125rem; /* 354 */
+  --dek: 30.625rem; /* 490 */
+  /* Figma measures the statement's 53 from its untrimmed box; our trimmed
+     cap top lands at Figma's (182 at 1440) with tile-top-md minus one line's
+     trim. lh and cap resolve on the element that uses it. */
+  --statement-top: calc(var(--layout-tile-top-md) - 1lh + 1cap);
 }
 
 /* The root jumps 14 → 16px at 991, so layout steps down there too (A7).
@@ -78,6 +87,11 @@
     --layout-tile-top-md: var(--spacing-56);
     --layout-tile-top-lg: var(--spacing-80);
     --layout-stack: var(--spacing-16);
+    /* Home sizes hold at their 1024 size, rounded down (706 / 309.75 /
+       428.75), instead of jumping back to 807 / 354 / 490. */
+    --band-featured: 44rem; /* 704 */
+    --post-tile: 19.25rem; /* 308 */
+    --dek: 26.75rem; /* 428 */
   }
 }
 
@@ -380,6 +394,36 @@
   }
   /* A9: inset on tiles, so the outline sits on the tile's own background. */
   [data-tile]:focus-visible {
+    outline-offset: calc(var(--spacing-8) * -1);
+  }
+
+  /* Sticky cascade (A9): a layer sticks only where StickyFit marked it as
+     fitting the viewport, and never on small screens or under reduced motion.
+     Layer order comes from z-* utilities on each layer. */
+  [data-sticky] {
+    position: relative;
+  }
+  @media (min-width: 768px) and (min-height: 640px) and (prefers-reduced-motion: no-preference) {
+    [data-sticky][data-fits] {
+      position: sticky;
+      top: 0;
+    }
+  }
+}
+
+/* One link per tile: the title's ::after covers the nearest positioned
+   ancestor (the tile), and the focus ring is drawn there, inset 8 (A9). */
+@utility link-stretched {
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+  &:focus-visible {
+    outline: none;
+  }
+  &:focus-visible::after {
+    outline: 2px solid var(--tile-fg);
     outline-offset: calc(var(--spacing-8) * -1);
   }
 }

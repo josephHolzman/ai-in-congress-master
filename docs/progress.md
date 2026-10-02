@@ -249,3 +249,73 @@
     * `rep-french-hill…mdx`: `:2` the title comes from the filename; `:3` verify the dek; `:4` the real publish date.
     * `states-taking-the-lead…mdx`: `:3` verify the dek; `:4` the real publish date. Missing links at `:12` (the Executive Order), `:14` (Nelson Mullins), `:16` (the IAPP tracker), `:20` (AB 1018), `:26` (SB 2) and `:32` (HB 1709).
     * `what-the-take-it-down-act…mdx`: `:7` verify every fact before removing `draft`; `:67` re-check the GovTrack cosponsor counts; `:71` link the specific EFF analysis. Its second editor note (`:15`, not a TODO) says "Example correction for design review only. Delete before publishing."
+
+## E4: Home (HomeNew) · 2026-10-02
+- Built:
+  - `src/app/page.tsx`, top to bottom: Topbar (home) with the h1 statement; the amber bill band (`<section>`, the `<dl>` stats, "Open the bill tracker"); the featured band (an ink tile beside the image); the "More analysis" grid; `<SiteEnd />`.
+  - `src/components/PostMeta.tsx` (the pill and date row: featured, grid, and E5's header), `src/components/PostTile.tsx` (the grid tile; E5's "More analysis" should reuse it) and `src/components/StickyFit.tsx` (the only new `"use client"`; it renders nothing).
+  - `tests/home.spec.ts`. At all 5 projects it checks: axe; the tab order, with a 2px ring at every stop and nothing covering it; one link per tile; hover and focus flipping tiles to mint with ink text; no horizontal scroll down to 320; reduced motion; no-JS. At 1440 only, it checks the cascade and the covered-nav focus case, plus that the fit guard turns sticky off.
+- Changed:
+  - `src/components/Topbar.tsx`: the home variant gets `data-sticky`, `z-0 focus-within:z-3` and `pb-stack`. The article variant is unchanged (never sticky).
+  - `src/app/globals.css`:
+    * the `[data-sticky]` rules (relative; sticky at top 0 only with `data-fits` inside the 768w / 640h / no-reduced-motion media query);
+    * the `link-stretched` utility (the title's `::after` covers the tile; the focus ring draws there, 2px `tile-fg`, inset 8);
+    * the tokens `--band-featured`, `--post-tile`, `--dek` and `--statement-top`, plus ≤991 values for the first three.
+  - `docs/token-log.md`: two lines. `CLAUDE.md`: E4 ticked.
+- Decisions:
+  - **Sticky: a two-stage cascade (Joey's call this session; it replaces the single wrapper):**
+    * the Topbar is sticky at z 0, the bill band sticky at z 1, and everything after it is `relative z-2` (one div inside `<main>`, one around SiteEnd);
+    * `focus-within:z-3` on both sticky layers;
+    * landmarks are unchanged: the header sits outside `<main>`, and the bill band is the first thing inside it;
+    * `StickyFit` marks each `[data-sticky]` element `data-fits` when its own height ≤ `innerHeight` (a ResizeObserver per layer, plus window resize). Without JS nothing is marked, so nothing sticks.
+    * E5's rail can reuse it: add `data-sticky` and render `<StickyFit />`.
+  - **Statement top: `--statement-top: calc(var(--layout-tile-top-md) - 1lh + 1cap)`**, which is tile-top-md minus one line's trim (80 − 18.3 = 61.7 at 1440). Figma's box is at 173; with Switzer's metrics (ascent 0.985, cap 0.723) its cap top is 182.3. Ours lands at 183.7, and our nav row is 82, not 80. It scales with the type at every width.
+  - **Start-only trim, twice** (`[text-box:trim-start_cap_alphabetic]`): on the h1 (Figma's 24 below is measured from the untrimmed box, so the topbar is 264.4 vs Figma 266) and on the stat `<dd>` (Figma's 8 runs box to box, so the label sits 20.5 under the number's baseline, as in Figma).
+  - **"Stats start 140 below the header" is read as 140 from the header's top:** a `min-h-tile-lg` header row, not a 140 margin. In Figma the heading box top and the stats are 138 apart, and the stats-to-source gap is about 110. A margin made the band 551; the min-height gives 517 (Figma 519). The row still grows if the header wraps or text spacing is overridden. The ActionRow is `mt-tile-lg` below the labels.
+  - **Stats grid:** `-mx-tile` with `px-tile` cells, so the columns are true quarters and the stats sit at 40 / 400 / 760 / 1120. 2 columns below 768 (a placeholder for E6).
+  - **Featured:** the h2 holds the stretched link; `md:min-h-(--band-featured)`, a min-height so text never clips. The image is `next/image` `fill` + `object-cover` in a `relative` cell, so the text tile sets the height. With no post image it uses `placeholder.svg` with `alt=""`, and below 768 the cell is `aspect-video` after the text (E6 refines). The title uses `text-tile`, not a fixed paper, so it flips to ink on hover.
+  - **Grid tiles:** `<article>`; `border-b border-tile-line md:odd:border-r`; an odd last tile spans 2 columns with no right line. Dev has 5 grid posts (the draft is featured), so the last one spans; production has 4 (States is featured).
+  - **Links go to `/posts/<slug>` (E5's route, 404 until then).** No post has `featured: true`, so the newest non-draft post is featured.
+  - **Copy:** the statement, the four stat labels and "More analysis" are inline in page.tsx (the prompt's strings, like E2's chrome copy). The bill heading and source line come from bill-stats.json.
+- Verified:
+  - `npm run lint` clean; Prettier clean; `npm run test:content` 9/9; `npm run build` passes (`/` is static); `npm run test:e2e`: 69 passed, 16 skipped (the 1440-only checks).
+  - **Mutation checks:**
+    * without the Topbar's `focus-within:z-3`, the covered-nav test fails;
+    * with sticky swapped to relative, the cascade test fails;
+    * both files restored.
+  - **Production build (`next start`):** axe 0 at 1440, 1280, 991 and 390; 4 tiles with 1 link each; `noindex, nofollow`.
+  - **Measured at 1440 (Figma in brackets):** topbar 264.4 (266); statement cap top 183.7 (182.3); bill band 517 (519); number cap tops 180 (184.5); stats x 40 / 400 / 760 / 1120 (quarters, per the prompt); featured 807 (807); grid tiles 354 (354).
+  - **Keyboard:** skip link, logo, 5 nav links, "Open the bill tracker", the featured title, the grid titles, email, Submit, 5 footer links. Every stop has a visible 2px ring and is the topmost element at its own position. Tabbing to a nav link while the bill band covers the topbar raises the topbar to z 3; tabbing to "Open the bill tracker" while the featured band covers it raises the bill band.
+  - **Hover and focus:** the featured and grid tiles go to mint `rgb(194,252,211)` with ink text.
+  - **Reduced motion and no-JS:** both layers `relative`.
+  - **Screenshots:** `screens/e4/`:
+    * home-{1440,1280,1024,991,768,390};
+    * home-prod-1440;
+    * cascade-{1,2,3}-1440;
+    * focus-{1-nav-while-covered,2-bill-tracker,3-featured,4-grid-tile}-1440;
+    * hover-grid-tile-1440;
+    * figma/ (home, topbar, bill-band from the MCP).
+  - **Figma MCP:** connected this time; screenshot and metadata of 2076:2212.
+  - **Eclipse parity** (Chrome, same-origin iframes at 1440 / 1366 / 1280 / 1024 / 990 / 768 / 390; ours in Playwright at the same widths plus 992 / 991):
+    * both scale bands with the root from 1440 to 1280 (ours: featured 807 → 706; Eclipse open-positions 492 → 431);
+    * hover: both 0.3s (ours ease-out, on the four tile vars);
+    * Eclipse's hero is sticky at top 0, z 1, at every width, with no motion or height guard (ours is guarded, per A9).
+    * **One token change:** at 991 our featured band and tiles grew back to their 1440 values (706 → 807, 328 → 354) while Eclipse's half band shrinks (431 → 400). Held at the 1024 size, rounded down: 704 / 308 / 428 (dek). Logged.
+- Open for next prompt:
+  - **Figma mismatches left as they are:**
+    * the nav row is 82, not 80 (E2);
+    * the featured title's cap top is 9px higher than Figma's (the prompt's 24 is measured from the trimmed cap top; Figma's 24 is to the untrimmed box);
+    * the bill heading's cap top is at 40 (Figma 43.5) and the action-row line at 437 (Figma 429);
+    * the last stat isn't navy (A1); the stat labels, statement casing and post titles are real copy, not Figma's placeholders;
+    * the image is the placeholder (no post images);
+    * the newsletter shows its "Email address" label (E2).
+  - **In production, Next's prefetch of `/posts/<slug>` never resolves** (the route doesn't exist), so Playwright's `networkidle` times out against `next start`. E5's route should end it; recheck there.
+  - **In dev,** Next's dev-tools badge sits over the footer's "Articles" link at 390. `home.spec.ts` ignores `nextjs-portal` hits.
+  - **Mobile (E6):**
+    * the featured band below 768 (aspect-video image after the text);
+    * stats in 2 columns;
+    * `--band-featured` and `--post-tile` have no ≤767 values;
+    * the h1 wraps to 2 lines at 1024 (topbar 289).
+  - **Real post images** will go through the next/image optimizer; remote sources need `images.remotePatterns`.
+  - Set `featured: true` on a post if Joey wants to choose it rather than defaulting to the newest.
+  - The E3 TODO(joey) list is unchanged; no content file was touched.

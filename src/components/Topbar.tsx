@@ -18,9 +18,13 @@ export function Topbar({ variant, current, children }: TopbarProps) {
     <Tile
       mode="mint"
       as="header"
+      // Home: the bottom layer of the sticky cascade (globals.css, StickyFit).
+      data-sticky={variant === "home" || undefined}
       // A volt header next to mint is 1.0:1, so article pages get a line.
       className={
-        variant === "article" ? "border-b border-tile-line" : undefined
+        variant === "home"
+          ? "z-0 pb-stack focus-within:z-3"
+          : "border-b border-tile-line"
       }
     >
       <div className="flex min-h-80 flex-wrap items-start justify-between gap-stack">

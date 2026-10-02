@@ -537,13 +537,17 @@ Build src/app/page.tsx. The bands, top to bottom:
 
 5) <SiteEnd /> (the newsletter band, then the footer).
 
-STICKY SLIDE-OVER (Eclipse's scroll behavior)
-- Wrap bands 1 and 2 in a container. With
-  @media (min-width: 768px) and (min-height: 640px) and (prefers-reduced-motion: no-preference)
-  the container is position: sticky, top: 0, z-index: 0.
-- Every band after it is position: relative, z-index: 1, with a solid background, so the featured band slides over the top section as you scroll.
-- :focus-within on the sticky container raises its z-index to 2.
-- If the combined height of bands 1 and 2 is taller than the viewport, the container is not sticky (use a tiny client hook with ResizeObserver; without JavaScript the default is not sticky).
+STICKY SLIDE-OVER: a two-stage cascade (decided by Joey on Oct 2; replaces the single wrapper)
+- Stage 1: the AI bills band slides up over the topbar and statement.
+- Stage 2: the featured band and everything after it slide up over the AI bills band.
+- Each layer is sticky at top: 0, and later layers have a higher z-index:
+  * the Topbar (home variant only): sticky, top 0, z-index 0;
+  * the bill band: sticky, top 0, z-index 1, solid amber;
+  * the featured band and every later band: position relative, z-index 2, solid backgrounds.
+- The landmarks stay as they are (header outside <main>, the bill band inside <main>). No wrapper.
+- Guards: sticky only within @media (min-width: 768px) and (min-height: 640px) and (prefers-reduced-motion: no-preference). Each layer is sticky only if its own height fits the viewport (the ResizeObserver hook, per element). Without JavaScript, nothing is sticky.
+- Focus is never hidden: :focus-within on a sticky layer raises it to z-index 3, so a focused nav link shows even while the bill band covers the topbar.
+- Article pages: the topbar is never sticky.
 
 Verify:
 - Screenshots at 1440 and 1280 in screens/e4/, compared against the Figma frame. List every visible mismatch you couldn't resolve.

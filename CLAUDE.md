@@ -249,7 +249,7 @@ Keep it short.
 - [x] E1.2: layout tokens at ≤991, small-text floor
 - [x] E2: shell components (Tile, ActionRow, Pill, Topbar, Footer, NewsletterBand)
 - [x] E3: content model around the imported articles
-- [ ] E4: Home (HomeNew)
+- [x] E4: Home (HomeNew)
 - [ ] E5: Article
 - [ ] E6: mobile first pass
 - [ ] E7: QA pass
