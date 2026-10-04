@@ -1,46 +1,49 @@
-import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "@carbon/icons-react";
 import { Logo } from "@/components/Logo";
-import { Tile } from "@/components/Tile";
+import { Tile, type TileMode } from "@/components/Tile";
 import { NAV_LINKS } from "@/lib/site";
 
 type TopbarProps = {
   variant: "home" | "article";
   /** The current page's href, marked with aria-current. */
   current?: string;
-  /** Home only: the statement below the nav row. */
-  children?: ReactNode;
+  /** Articles pass their header's mode, so the top reads as one field. */
+  mode?: TileMode;
 };
 
-export function Topbar({ variant, current, children }: TopbarProps) {
+export function Topbar({ variant, current, mode = "mint" }: TopbarProps) {
   return (
     <Tile
-      mode="mint"
+      mode={mode}
       as="header"
-      // Home: the bottom layer of the sticky cascade (globals.css, StickyFit).
+      // Home: sticky under the bill band, which slides over it (globals.css,
+      // StickyFit).
       data-sticky={variant === "home" || undefined}
-      // A volt header next to mint is 1.0:1, so article pages get a line.
+      // The z-index only applies where it's sticky (Home). Off mint (articles)
+      // the topbar sits on a header of its own color: a hairline sets the nav
+      // apart.
       className={
-        variant === "home"
-          ? "z-0 pb-stack focus-within:z-3"
-          : "border-b border-tile-line"
+        mode === "mint"
+          ? "z-0 focus-within:z-3"
+          : "z-0 border-b border-tile-line focus-within:z-3"
       }
     >
-      <div className="flex min-h-80 flex-wrap items-start justify-between gap-stack">
+      <div className="flex min-h-(--topbar-row) flex-wrap items-start justify-between gap-stack">
         <Link href="/" className="block">
           <Logo width="var(--logo-topbar)" className="block" />
         </Link>
         {/* From md, the nav is the right half: 50% of the content box ends on
             the right inset, so it starts on the 50% line. Below md it drops
-            under the logo, full width, in 2 columns with the external link
-            last (Joey's call, E6: CSS order, so desktop is untouched). */}
+            under the logo, full width, in 2 columns, external link last. */}
         <nav aria-label="Main" className="w-full md:w-1/2">
           <ul className="grid grid-cols-(--nav-cols) gap-x-stack gap-y-stack-sm">
             {NAV_LINKS.map(({ label, href, external }) => (
               <li
                 key={label}
-                className={external ? "max-md:order-last" : undefined}
+                className={
+                  external ? "md:col-start-3 md:row-start-1" : undefined
+                }
               >
                 <Link
                   href={href}
@@ -64,7 +67,6 @@ export function Topbar({ variant, current, children }: TopbarProps) {
           </ul>
         </nav>
       </div>
-      {variant === "home" && children}
     </Tile>
   );
 }

@@ -540,3 +540,317 @@
   - **Still growing at 991, not in this prompt's list:** `--disclaimer` (35rem: 490 → 560) and the topbar row's `min-h-80` (70 → 80; hidden behind the 72 nav). Same fix as the others if wanted.
   - In dev, Next's dev-tools badge sits over the featured title and a stat at 390 (the screenshots show it); production doesn't render it.
   - The E3 TODO(joey) list is unchanged; no content file was touched.
+
+## E6.1: Bill tracker row, nav focus order, 991 holds · 2026-10-02
+- Built: nothing new. Scratch measurement and screenshot scripts are outside the repo.
+- Changed:
+  - `src/app/page.tsx`: the bill band's action row is `md:col-span-2 md:col-start-2` on the `--nav-cols` grid (was `md:col-start-3`). Comment updated.
+  - `src/lib/site.ts`: `NAV_LINKS` DOM order is Articles, Privacy Policy, Bill Tracker, Accessibility, Joey Holzman (the mobile visual order).
+  - `src/components/Topbar.tsx`, `Footer.tsx`: the external link's `<li>` is `md:col-start-3 md:row-start-1` (was `max-md:order-last`). The other four auto-place around it, so desktop is unchanged. The Topbar row is `min-h-(--topbar-row)` (was `min-h-80`).
+  - `src/app/globals.css`: new `--topbar-row` (`spacing-80`); ≤991 `--disclaimer: 30.625rem` (490) and `--topbar-row: 4.375rem` (70).
+  - `tests/home.spec.ts`, `tests/shell.spec.ts`: `navOrder` follows the new DOM order. `tests/scaling.spec.ts`: `disclaimer` and `topbar-row` join the size probes.
+  - `docs/token-log.md` (2 lines), `CLAUDE.md` (E6.1 ticked).
+- Decisions:
+  - **The topbar row's min-height got a token** (`--topbar-row`) rather than an existing one: `min-h-tile-md` would also hold (56 at ≤991), but it's a tile top, not the row. 80 at 1440 and 70 at 992 are unchanged; only ≤991 changes (80 → 70). It never binds today (the nav is taller), so nothing visibly moves.
+  - **Desktop tab order is now Articles → Privacy Policy → Bill Tracker → Accessibility → Joey Holzman ↗**, so on desktop Tab goes across row 1's first two columns, down to row 2, then back up to column 3. That follows the prompt's single DOM order; the mobile order now matches the visual order exactly (WCAG 2.4.3).
+- Verified:
+  - `npm run lint` clean; Prettier clean; `npm run build` passes; `npm run test:e2e`: 131 passed, 64 skipped (same totals). That includes axe 0 on `/` and `/tracker` at 1440, 1280, 1024, 768 and 390, and both keyboard walks with the new order.
+  - **Scaling test:** `disclaimer` 770 / 560 / 527.6 / 490 from 1281 down to 390; `topbar-row` 110 / 80 / 75.4 / 70 from 1281 down to 390. **Mutation check:** without the two ≤991 values it fails ("disclaimer: 490 at 992 → 560 at 991", "topbar-row: 70 at 992 → 80 at 991"); file restored.
+  - **Bill tracker row** (label lines, row edges = nav column 2's left to the last column's right): 1 line at 1440 (954.7–1400), 1366 (905.6–1328.3), 1280 (848.7–1245), 1024 (678–989), 992 (656.7–957), 991 (654.5–956.5), 768 (509.3–744). Full width and 1 line at 767 and 390.
+  - **Nav placement:** Topbar at 1440 is Articles 720, Privacy 954.7, Joey 1189.3 in row 1, and Bill Tracker 720, Accessibility 954.7 in row 2. That's the E5.1 layout, and it's the same at 1366, 1280, 1024, 991 and 768. The footer is the same shape (Joey in column 3 of row 1). Below md both are Articles | Privacy / Bill Tracker | Accessibility / Joey.
+  - **Tab order** (scratch script): at 390 and 1440, Articles | Privacy Policy | Bill Tracker | Accessibility | Joey Holzman (external site).
+  - No console errors or warnings on `/` in dev.
+  - **Screenshots:** `screens/e6.1/`: home-{1440,1366,1280,1024,768,390} (top of page) and footer-{1440,1366,1280,1024,768,390}.
+  - **Not done:** a Figma compare and an Eclipse parity pass. Nothing in scale, type or spacing changed except the two ≤991 holds, which are below Eclipse's values anyway.
+- Open for next prompt (E7):
+  - "Joey Holzman ↗" still wraps in its nav column from 768 to about 900 (visible in home-768).
+  - The nav and action row still end up to 10.5 short of the right inset between about 970 and 991 (E6's `--nav-cols` hold): 957 vs 967 at 991.
+  - Carried from E6: grid tiles keep the 308 min-height on mobile; the footer's gaps on mobile; `tests/article.spec.ts:132` TS error (`offsetHeight` on `HTMLElement | SVGElement`).
+  - The E3 TODO(joey) list is unchanged; no content file was touched.
+
+## E6.1 (revised): New buttons, single-stage scroll, nav focus order, 991 holds · 2026-10-03
+- Built: `src/components/Mark.tsx` (the quarter-circle from `src/app/icon.svg`, `fill="currentColor"`, `aria-hidden`, `width` prop like `<Logo>`). It sits next to `Logo.tsx` in `src/components/`, where `Logo` actually lives (the prompt said `src/assets/brand/`, which only holds the source SVG).
+- Changed:
+  - **This finishes the E6.1 above.** That pass (same day, uncommitted) had already done item 5 (nav DOM order, `md:col-start-3 md:row-start-1`, no `order` rules, both tests' `navOrder`) and two of item 6's holds (`--disclaimer`, `--topbar-row`). They're unchanged; its "Open the bill tracker" row is gone.
+  - `src/app/page.tsx`, bill band: DOM order is heading → source line → stats → button. The header is `md:flex md:items-baseline md:justify-between` (source line top right; below md it's under the heading, `mt-stack`). The `<dl>` is unchanged (`mt-tile-md`). The button: a `-mx-tile mt-tile-md grid md:grid-cols-2` row with `<Tile mode="ink" interactive>` at `md:col-start-2`, holding a `link-stretched` "Explore the bill tracker" (heading-h4) and `ArrowRight` 32. The band is `relative z-1 pb-0` (no `data-sticky`, no `focus-within:z-3`), so the button is flush on its bottom and spans 720–1440 at 1440. Below md it's full width.
+  - `src/app/page.tsx`, featured tile: the bottom row is `flex items-end justify-between gap-stack`: the dek, then `ArrowRight` 48. The wrappers after the band are `relative z-1` (were z-2).
+  - `src/components/PostTile.tsx`: `ArrowRight` 48 with `mt-auto` (bottom left) replaces the "Read more" row.
+  - `src/components/ActionRow.tsx`: only "Track this bill" (Rail) and the styleguide use it now, so the `decorative` prop and its `<div>` branch are deleted and `href` is required. `src/app/styleguide/page.tsx` drops its "Read more" demo.
+  - `src/components/Footer.tsx`: `<Mark width="var(--mark-footer)">` (mint) replaces the wordmark.
+  - `src/app/globals.css`: `--spacing-48`; `--mark-footer` 20.0625rem, 17.5rem at ≤991, `min(60%, 17.5rem)` at ≤767; `--logo-footer` deleted (nothing else used it). Stale cascade comments updated (also in `Topbar.tsx`).
+  - `tests/home.spec.ts`: "sticky cascade" → "single-stage scroll": "the amber band covers the topbar" (the topbar still at top 0), new "the featured band never overlaps the bill band" (scrolls 0–900: the gap is ≥ 0 and the band's visible top shows amber), the focused-nav test unchanged, and "only the topbar sticks, and only while it fits". The stage-2 test is gone. The reduced-motion and no-JS tests expect one sticky layer. The keyboard walk expects "Explore the bill tracker" and reads titles from `:is(h2, h3) a`. New "hover and focus flip the bill tracker button to mint". The featured selector is `[data-tile=ink]:has(h2)` (main has two ink tiles now).
+  - `tests/scaling.spec.ts`: `mark-footer` replaces `logo-footer` in the token probe. The shell test runs on `/` (was `/tracker`) so it can also measure the bill tracker button's height; "footer logo" → "footer mark".
+  - Docs: Part A A8 (two arrow rows), A9 (tile arrows are `aria-hidden`; Home is a single stage), the E4 sticky section, CLAUDE.md (§5 tile arrows; Progress line renamed and ticked), `docs/token-log.md` (2 lines; the old "Open the bill tracker" line is marked superseded).
+- Decisions:
+  - **The button's `<a>` is the label, stretched over the tile** (`link-stretched`), not an `<a>` that is itself the tile. The whole block is the hit area, the ring is the tiles' inset ring (2px, −8), and it's the same one-link-per-tile pattern as the other tiles. Tile has no `as="a"`, so the alternative was a second way to make a tile.
+  - **Stats → button gap is `tile-md`** (80): band 463.5 at 1440 vs Figma 456 (+7.5). `tile-pad` (40) gives 423.5 (−32.5); nothing in between is a layout token. Figma's 54 is measured from 2-line labels; ours are 1 line at ≥768.
+  - **Button height needs no new ≤991 value:** it's 2 × `tile-pad` + the label/arrow, so 112 / 98 at 992 / 80 at 991 / 80 at 390. It's in the scaling test.
+  - **Mark position:** the tile inset (40, 40), since Figma's (28, 30) isn't on a token. The footer is 414 at 1440 (Figma 394).
+  - **Mark below 768:** 60% of the footer, capped at its 991 size (205 at 390, 280 at 767). It keeps E6's 60% for the wordmark and doesn't grow at 767.
+- Verified:
+  - `npm run lint` clean; Prettier clean; `npx tsc --noEmit` clean; `npm run build` passes (placeholder warning for bill-stats.json); `npm run test:e2e`: **136 passed, 64 skipped** (1440-only checks). That covers axe 0 on `/` at 1440, 1280, 1024, 768 and 390, and on every article and /tracker at all 5; the Home keyboard walk at all 5 (skip → logo → Articles, Privacy Policy, Bill Tracker, Accessibility, Joey Holzman → Explore the bill tracker → featured → grid → email → Submit → footer in the same order), each stop with a 2px ring and uncovered (elementFromPoint).
+  - **Mutation check:** without the ≤991 `--mark-footer` the scaling tests fail ("mark-footer: 280.88 at 992 → 321 at 991", "footer mark: … → 321 at 991"); file restored.
+  - **Measured at 1440:** band 463.5; button 720–1440, 351.5–463.5 (112, flush); source line right edge 1400; h2 and source line share a baseline at 1440, 1024 and 768 (probe span). Featured arrow 632–680 (Figma 632–680). 1366: band 437, button 105.5. 991: band 355.9, button 80. 390: heading → source (16) → stats → button 0–390, flush.
+  - **Button hover and focus** (scratch script): ink/paper → mint bg, ink label and arrow, 0.3s; 0s under reduced motion; focus ring solid 2px, offset −8, ink.
+  - No horizontal scroll at 1440 → 390 (scrollWidth = clientWidth).
+  - **Screenshots** in `screens/e6.1/`: home-{1440,1366,1024,768,390} (full page), scroll-1440-{0,150,300,466,700}, button-{hover,focus}-1440, footer-{1440,390}, figma-2089-10.
+  - **Figma (2089:10) mismatches left:** band +7.5 (above); stats at the quarter lines + 40 (prompt: unchanged) vs Figma's 98 / 426 / 790 / 1154; button label sentence case; grid tiles pad 40 vs Figma 27 (unchanged); footer 414 vs 394 and the mark at 40, 40; newsletter label kept. The items the prompt said to ignore were ignored.
+  - **Eclipse** (Chrome, same-origin iframes on the archive): its arrow icons are 66 (with h2) and 30 (with h4) at 1440, 1280 and 1024, 38 / 24 at 991 and 768, and 32 / 22 at 390. They step down at 991. No token changed for parity.
+- Open for next prompt (E7):
+  - **At ≤767 the ink button sits directly on the ink featured tile:** the two blocks merge, with no line between them (see home-390). Joey's call: a `tile-line` border, or another mode.
+  - **The new arrows grow at the 991 root jump** (48: 42 → 48; 32: 28 → 32), like every existing `size-24` icon (21 → 24). Eclipse's step down there. If wanted, one icon-size hold covering all icons, not just these two.
+  - Carried: "Joey Holzman ↗" wraps from 768 to about 900; the nav ends up to 10.5 short of the right inset near 991; grid tiles keep the 308 min-height on mobile (more empty space now that the arrow is smaller than the row was); the footer's mobile gaps; the `tests/article.spec.ts:132` TS error; in dev, Next's badge overlaps content at 390.
+  - The E3 TODO(joey) list is unchanged; no content file was touched.
+
+## E6.2: Article image overlaps the header · 2026-10-03
+- Built: nothing new.
+- Changed:
+  - `src/app/posts/[slug]/page.tsx`: the paper wrapper after the header is `flow-root pb-tile-lg` (was `pb-tile-lg`). One class.
+  - `tests/article.spec.ts`: new "the header color shows beside the image's top edge" (1440 project only; it sets 1440, 991 and 390 itself and runs all 6 posts, one per header mode). It checks that the first `[data-tile]` under (image left − 8, image top + 8) is the header, that the overlap is 104 / 91 / 56, and that the paper wrapper's top is the header's bottom (±1).
+  - `CLAUDE.md` (E6.2 added and ticked).
+- Decisions:
+  - **Cause confirmed before the fix:** at 1440 the paper wrapper's top was 812.5, the same as the image's top; the header's bottom is 916.5. The `-mt-image-overlap` collapsed through the wrapper (no top padding or border), so the wrapper moved up 104 and painted paper over the header's bottom 104. The rects still said "overlap 104", which is why E5's scratch check passed. With `flow-root` the wrapper starts at 916.5 and the image overflows up over the header.
+  - **The test uses `elementsFromPoint`, not `elementFromPoint(...).closest('[data-tile]')` as the prompt said.** At that point the top hit is the image's transparent full-width `-mt-image-overlap px-tile` div, a child of the paper wrapper, so `closest` returns paper even when the header color is what shows. The first `[data-tile]` in the stack is the header after the fix and the paper wrapper before it. **Mutation check:** without `flow-root` the test fails ("slate at 1440"); with it, it passes.
+  - **There was no overlap check in the spec.** E5 measured it with a scratch script. The 104 / 91 / 56 checks are now in the new test.
+  - No token changes; `token-log.md` untouched.
+- Verified:
+  - `npm run lint` clean; Prettier clean on both files; `npx tsc --noEmit` clean; `npm run build` passes (the bill-stats placeholder warning); `npm run test:e2e`: **137 passed, 68 skipped** (+1 test, plus 4 skips for its non-1440 projects). That includes axe 0 on all 6 articles at 1440, 1280, 1024, 768 and 390 (so navy and volt at 1440 and 390), and the article keyboard walk (every stop outlined and uncovered).
+  - **Nothing below the image moved:** image bottom → next block is 60 at 1440 and 52 at 991 and 390, the same as before the fix (next block 1261.3 / 926.2 / 954.5 before and after). No post has an image credit, so there's no figcaption to check; it sits inside the figure, so it moves with the image.
+  - `/privacy` and `/accessibility` don't use the pattern: one paper `Tile`, no negative margins. The only `-mt-image-overlap` is the article's.
+  - **Screenshots** in `screens/e6.2/`: `navy-{1440,991,768,390}`, `volt-{1440,991,768,390}` (cropped around the seam), and `figma-2075-1532`.
+  - **Figma (2075:1532):** the image straddles the header edge with the header color on both sides of its top, as in the frame. No new mismatches.
+  - **Eclipse parity:** not rerun; no token, type, spacing or layout value changed.
+- Open for next prompt (E7): unchanged from E6.1 (revised). The `tests/article.spec.ts:132` TS error (`offsetHeight` on `HTMLElement | SVGElement`) is still there; `tsc` doesn't cover tests, so only the editor shows it. The E3 TODO(joey) list is unchanged; no content file was touched.
+
+## E6.2 (completed): Amber divider under the tracker button · 2026-10-03
+- Built: nothing new.
+- Changed:
+  - **This finishes the E6.2 above.** That pass (same day, uncommitted) had done items 1 and 2: `flow-root` on the article's paper wrapper and the "header color shows beside the image's top edge" test. I re-checked both and left them as they were. Item 3 is new here.
+  - `src/app/page.tsx`: the bill band is `relative z-1 pb-0 max-md:pb-8` (was `pb-0`). The comment above the button row now mentions the strip.
+  - `tests/home.spec.ts`: new "an amber strip under the tracker button, below md only" runs in every project. It scrolls the seam to mid-screen and checks the gap from the button's bottom to the featured band's top: 8 (±1) below 768, with `elementFromPoint` in the gap resolving to `amber`; 0 (±1) at 768 and up.
+  - `CLAUDE.md`: the Progress line is renamed to "E6.2: article image overlap, amber divider under the tracker button" (it was already ticked).
+  - The bill-band note in `docs/build-prompts.md` (E6.1 section) already said "with an 8px amber strip under it (E6.2)", so I left it alone.
+- Decisions:
+  - **`pb-8` resolves to `--spacing-8`** (0.5rem), so it scales with the fluid root. Measured: 8.0 at 390; 0 at 768.
+  - No token changes; `token-log.md` untouched.
+- Verified:
+  - `npm run lint` clean; `npx tsc --noEmit` clean; Prettier clean; `npm run build` passes; `npm run test:e2e`: **142 passed, 68 skipped**. That includes axe 0 on all 6 articles at all 5 widths (navy and volt among them, at 1440 and 390), axe 0 on `/`, and the Home and article keyboard walks.
+  - **Mutation check:** without `max-md:pb-8` the new test fails at 390 ("Expected: <= 1, Received: 8"). File restored.
+  - **Screenshots:** `screens/e6.2/home-390.png` (amber strip between the button and the featured tile) and `home-768.png` (button flush on the featured image). The article seam shots and `figma-2075-1532` are from the earlier pass; the article didn't change here.
+  - **Eclipse parity:** not rerun; no token, type or layout value changed.
+- Open for next prompt (E7): E6.1's "ink button merges with the ink featured tile at ≤767" is resolved. Everything else from E6.1 (revised) and E6.2 still stands: the icon-size hold at 991; "Joey Holzman ↗" wrapping from 768 to about 900; the nav up to 10.5 short near 991; the grid tiles' 308 min-height on mobile; the footer's mobile gaps; the `tests/article.spec.ts:132` TS error; and the Next dev badge at 390. The E3 TODO(joey) list is unchanged; no content file was touched.
+
+## E6.3: Color remap (tracker = signal, newsletter = amber, featured = navy) · 2026-10-03
+- Built: nothing new. No modes or tokens added; only which mode each block uses.
+- Changed:
+  - `src/app/page.tsx`: the bill band is `mode="paper"`. "{congress} Congress" in the heading is a `<span className="text-signal">`. The stat items get a `signal` flag (only "Became law"), which puts `text-signal` on the number; the label stays ink. The tracker button stays ink with `[--tile-hover-bg:var(--color-signal)]`, so the shared hover/focus rule flips it to signal with ink text. The featured tile is `mode="navy"`. The strip comment now says paper, off the navy tile.
+  - `src/components/NewsletterBand.tsx`: `mode="amber"`; the paper fg override and the "≥ 24px" comment are gone. The input and Submit both get `border border-ink` (see Decisions). Type sizes unchanged.
+  - `src/app/posts/[slug]/Rail.tsx` (cap) and `src/app/tracker/page.tsx` (header): amber → signal.
+  - Tests: `home.spec` has the featured selector `[data-tile=navy]`, the tracker button flips to signal, a new "signal text is never under 24px" (1440 project; sets 1440, 991 and 390 itself), and amber → paper in the strip and single-stage tests. `shell.spec` has a new "newsletter: an amber band, the input edged in 1px ink". `article.spec` has a new "rail: the cap is signal".
+  - Docs: CLAUDE.md §4 (new mapping plus the 24px signal rule; Progress line added and ticked). Part A: A1 (the "2" in navy row is replaced by the label-stays-ink row, plus the input-border row), A2 (signal and amber roles, the 24px rule, no blue links on amber), A3 (signal as hover-bg, the paper override note removed, the hover line says it takes `--tile-hover-bg`), A9 (solid amber → solid paper).
+- Decisions:
+  - **Submit also gets the 1px ink border.** With only the input bordered, the input is 2px taller than Submit below md, where they stack and Submit doesn't stretch. On ink it's invisible; on hover (mint) it shows as an ink edge, matching the input. Measured: both 92.0 at 1440 and both 54.8 at 390 (the input was 52.8 at 390 before, so +2).
+  - **The hover arbitrary property is on the one Tile** (utilities layer beats the `[data-tile]` base default). No globals.css change, so token-log.md is untouched.
+  - **Figma 2089:10 shows the button in navy over an ink featured tile:** the reverse of this prompt (ink button, navy featured). I followed the prompt, which also keeps the phone paper strip meaningful.
+  - The muted 72% ink in the shared hover rule would land on signal for the tracker button, but the button has no muted text, so it doesn't matter today.
+- Verified:
+  - `npm run lint` clean; `npx tsc --noEmit` clean; Prettier on touched files; `npm run build` passes; `npm run test:e2e`: **153 passed, 72 skipped** (1440-only checks). That includes axe 0 on `/`, `/tracker` and all 6 articles at 1440, 1280, 1024, 768 and 390, plus the Home, /tracker and article keyboard walks (each stop solid 2px and uncovered).
+  - **Mutation check:** with `text-signal` on the stat labels, "signal text is never under 24px" fails ("signal text at 991, Received 20"). File restored.
+  - **Measured at 1440 (production build, scratch script):** button at rest is ink with a white label; hover is bg `rgb(255, 67, 1)` with ink label and arrow, 0.3s; keyboard focus gives the same colors plus a solid 2px ink ring at −8. The featured tile is navy, its date at paper 72%. The rail cap is signal with an ink h2. The newsletter input border computes to `1px solid rgb(8, 8, 12)`.
+  - **Screenshots** in `screens/e6.3/`: home-{1440,1024,768,390} (full page), button-hover-1440, button-focus-1440, newsletter-{1440,390} (from /tracker), article-rail-1440 (the child-safety post: the take-it-down post is a draft and isn't served in production), figma-2089-10.
+  - **Figma (2089:10):** deliberate deviations are the ink "Became law" label (Figma: signal) and the input border. Also differs: button/featured colors swapped (above), plus E6.1's carried items (band +7.5, stat x positions, sentence-case label, grid pad, footer). Items the prompt said to ignore were ignored. At the frame's export scale the input may already have a thin dark edge; worth a look in Figma.
+  - **Eclipse parity:** not rerun; no token, type, spacing or layout value changed.
+- Open for next prompt (E7): On /tracker the signal header now sits directly on the amber newsletter band (no line between; both have ink text, so contrast is fine, but they're adjacent warm colors). A process on port 3100 (PID 18148) predates this session; I used 3117. Everything else from E6.2 stands: the icon-size hold at 991, "Joey Holzman ↗" wrapping from 768 to about 900, the nav up to 10.5 short near 991, the grid tiles' 308 min-height on mobile, the footer's mobile gaps, the `tests/article.spec.ts:132` TS error, and the dev badge at 390. The E3 TODO(joey) list is unchanged; no content file was touched.
+- **Follow-up (same session): Trump.png as the placeholder image.** Joey's call. Moved `Trump.png` (640×640) from the repo root to `public/images/trump.png`. Next only serves images from `public/`. The two fallbacks (`src/app/page.tsx` featured image, `src/app/posts/[slug]/page.tsx` figure) point at it. `alt` stays `""` (still a decorative placeholder). `placeholder.svg` is kept for when it goes back; CLAUDE.md §3 notes both. This overrides E0's "no stock photo" rule for now. lint, build and test:e2e (153 passed, 72 skipped) pass. Screenshots: `screens/e6.3/trump-{home-1440,home-390,article-1440}.png`. At 1440 the 640px source fills a 720-wide cell, so it's slightly upscaled.
+
+## E6.4: Smaller display headings (72/52/32 at 1440) · 2026-10-03
+- Built: nothing new.
+- Changed:
+  - `src/app/globals.css`: `type-display-h1` 5.625rem → 4.5rem; `type-display-h2` 4.125rem → 3.25rem; `type-display-h3` 2.375rem → 2rem with line height 42/38 → 36/32, and at ≤991 2rem → 1.75rem (its line-height override is removed, so it keeps 36/32). ≤767 values, tracking, weights, the fluid root, its breakpoints and the 1920 cap are unchanged. Every other type style is unchanged.
+  - `tests/scaling.spec.ts`: new "display headings compute to 72/52/32 at 1440 and 63/45.5/28 at 1220" (on /styleguide, 1440 project). The existing no-growth test had no hard-coded sizes, so it needed no changes.
+  - Docs: Part A A5 (the table, the ≤991 note and a "Display sizes (E6.4)" paragraph), `docs/token-log.md` (3 carry-to-Figma lines marked as a taste call, not parity), and CLAUDE.md (E6.4 added and ticked). The /styleguide page reads computed sizes (`Computed.tsx`), so it needed no edit.
+- Decisions:
+  - **≤991 display-h3 is 28 / 31.5, not the prompt's 28 / 32.** With 28/32 the no-growth test failed ("display-h3 lh: 31.5 at 992 → 32 at 991"): at 992 the root is 14, so 2rem × 36/32 = 31.5. The prompt also required that test to pass, so I kept the desktop ratio. The difference is half a pixel. In Figma, Mobile/Tablet H3 is 28/31.5, or 28/32 if Joey accepts the 0.5px growth (that would mean loosening the test).
+  - No layout or min-height token changed, as the prompt asked.
+- Verified:
+  - `npm run lint` clean; Prettier clean; `npx tsc --noEmit` clean; `npm run build` passes (bill-stats placeholder warning); `npm run test:e2e`: **154 passed, 76 skipped** (+1 test). This includes axe 0 on `/` and all 6 articles at 1440 and 390 (and at 1280, 1024 and 768), the no-growth test, and "signal text is never under 24px".
+  - **Computed sizes** (scaling table): h1/h2/h3 are 99 / 71.5 / 44 at 1920+ (2560 too); 72 / 52 / 32 at 1440; 63 / 45.5 / 28 from 1280 down to 992 and at 1220; 60 / 40 / 28 at ≤991; 40 / 34 / 24 at ≤767. The h3 line height is 36 at 1440, 31.5 from 1280 to 768 and 27.6 at ≤767.
+  - **Signal "119th Congress" span:** 32 at 1440, 28 at 1280 and 1024, 24 at 390. The "Became law" number is display-h1 (≥ 40).
+  - **Before → after at 1440** (dev server, the same page with the old sizes injected as an override, scratch script):
+    - topbar height 264.4 → 256.2 (−8.2). The statement stays 1 line. `--statement-top` follows by itself: margin 61.7 → 65.6. The trimmed cap top moves from 183.7 → 187.6 below the header top (Figma 182), because the smaller line box has less space above the cap.
+    - Home bill band 463.5 → 443.2 (Figma 456: was +7.5, now −12.8).
+    - featured band 807 → 807 (the `--band-featured` min-height binds both before and after). The empty space between the title and the dek row, with the longest real title, grows from 295.3 → 399.4.
+    - grid tiles 354 → 354 (min-height binds; titles still 2,2,2,2,1 lines). The smallest empty space above the arrow grows from 93.5 → 103.9.
+    - article header (the Bilirakis post) 819.5 → 711.5 (−108; 1024: 718.2 → 623.7; 390 unchanged at 550.7).
+  - **Wrapping** (the longest real title, "Rep. Bilirakis Introduces Bill to Prohibit AI-Generated Child Pornography", put into the featured tile; and its article header):
+    - featured tile: 4 → 3 lines at 1440, 5 → 4 at 1024, 4 → 4 at 390;
+    - the real featured title (TAKE IT DOWN): 3 → 2 at 1440, 4 → 3 at 1024;
+    - article h1: 4 → 3 at 1440 and 1024, 4 → 4 at 390.
+    Nothing wraps worse.
+  - **Screenshots:** `screens/e6.4/`, full page: home-{2560,1440,1220,1024,390} and article-{2560,1440,1220,1024,390} (the Bilirakis post).
+  - **Not done:** a Figma compare (the frames still have the old sizes) and an Eclipse parity pass. This is a deliberate move away from Eclipse's 66 at 1440, logged as a taste decision.
+- Open for next prompt (E7):
+  - **Joey's call in Figma:** the featured band (807 min) now has about 100 more empty px at 1440, and the grid tiles about 10 more. The bill band is 12.8 under Figma's 456. The article header is 108 shorter. Update the Figma Display/H1–H3 styles (token-log lines) and the Tablet H3 to 28/31.5.
+  - The newsletter field and Submit use display-h3 above 767, so they're slightly shorter now (32 text instead of 38 at 1440). The scaling test still passes.
+  - Everything carried from E6.3 still stands: the icon-size hold at 991, "Joey Holzman ↗" wrapping from 768 to about 900, the nav up to 10.5 short near 991, the grid tiles' 308 min-height on mobile, the footer's mobile gaps, the `tests/article.spec.ts:132` TS error, the dev badge at 390, and the signal header next to the amber band on /tracker. The E3 TODO(joey) list is unchanged; no content file was touched.
+
+## E6.5: Featured band ≤ viewport · 2026-10-03
+- Built: nothing new.
+- Changed:
+  - `src/app/globals.css`: `--band-featured` is `min(50.4375rem, 100svh)` (≤991: `min(44rem, 100svh)`). It's still used as `md:min-h-`, so longer content grows the band. Nothing else in the file changed.
+  - `src/app/page.tsx`: no net change. Mid-session Joey had the statement h1 switched to `type-display-h3` (the bill heading's style), then asked for it back; it's `type-display-h2` again, and the matching A5 and token-log edits were reverted too.
+  - `tests/home.spec.ts`: new "the featured band is at most one screen tall" (1440 project; it sets 1440×790, 1536×730, 1920×950 and 2560×1305 itself). With the band's top scrolled to 0 it checks: the band height ≤ innerHeight + 1; the h2, the dek `p` and the arrow `svg` are within [0, innerHeight]; and at 2560 the band is 1109.6 (±1).
+  - `src/components/NewsletterBand.tsx` (Joey's mid-session request): the "Email address" label → input gap is `mt-stack` (was `mt-stack-sm`). Measured: 24 at 1440, 21 at 992, 16 at 991 and 390 (was 8). The band is 330.7 at 1440 and 321.5 at 390. It's sitewide, since the band is in `SiteEnd`.
+  - Docs: `docs/token-log.md` (2 lines: the band, the label gap), CLAUDE.md (E6.5 added and ticked).
+- Decisions:
+  - The band uses `svh`, as the prompt asked; on desktop Chrome it equals innerHeight.
+- Verified:
+  - `npm run lint` clean; Prettier clean on the touched files; `npm run build` passes (bill-stats placeholder warning); `npm run test:e2e`: **155 passed, 80 skipped**, 0 failed (+1 test, plus 4 skips). This includes axe 0 on `/` at 1440, 1280, 1024, 768 and 390, plus the keyboard walk.
+  - **Mutation check:** with the old `--band-featured: 50.4375rem` the new test fails ("band at 1440×790: Expected ≤ 791, Received 807"). File restored.
+  - **Band height and title → dek gap** (h2 bottom to dek top, band top at 0):
+    - Production (featured = "States Taking the Lead…", 3 lines at ≤1920): 1440×790 band 790, gap 382.4; 1536×730 band 730, gap 292.0; 1920×950 band 950, gap 390.3; 2560×1305 band 1109.6, gap 621.4 (2 lines). Arrow bottom 750.5 / 687.1 / 895.1 / 1054.8, so it's always in view.
+    - Dev (featured = the TAKE IT DOWN draft, 2 lines): gaps of 434.4 / 347.9 / 461.8 / 621.4.
+    - Unchanged where the window is taller: 1440×900 is 807, 1024×768 is 706.1, 768×1024 is 704.
+  - **Growth, no clipping** (scratch script, 1440): the longest real title (Bilirakis, 3 lines) at 790 → band 790, gap 382.4; plus a WCAG text-spacing override → still 790, no overflow; 1440×400 → the band grows to 435.6 (content), no overflow.
+  - **Image crop** at 1440×790: the cell is 720×790 (object-cover), head and shoulders whole; it looks intentional.
+  - **Screenshots** in `screens/e6.5/` (production build on :3117): home-{1440x790,1536x730,1920x950,2560x1305} (the band's top at the window top), newsletter-{1440,390} (from /tracker, after the label-gap change). The band numbers below were measured with the statement briefly at display-h3; it sits above the band, so they don't change.
+  - **Not done:** a Figma compare and an Eclipse pass (no parity value changed).
+- Open for next prompt (E7):
+  - **The featured image never loads when the browser picks the 828w variant.** `/_next/image?url=/images/trump.png&w=828` never responds to a WebP/AVIF Accept header, in dev and in production (750, 1080 and 1200 respond in ms). `sharp` itself encodes it in 39ms. The browser picks 828 for `50vw` at about 1536–1656 wide, and **probably on 390-wide phones at DPR 2** (100vw × 2 = 780 → 828), so the featured cell shows plain stone there (see home-1536x730). Not caused by this change; not investigated further. Worth checking first in E7: clear `.next/cache/images` and retry, then the Next version.
+  - **The empty navy is still large:** the band now fits the screen, but justify-between still puts 290–460 between the title and the dek on common windows (621 at 2560). If that's the real complaint, the band would need to be shorter, or the tile shouldn't be justify-between. Joey's call.
+  - Everything carried from E6.4 still stands (the Figma updates, the icon-size hold at 991, "Joey Holzman ↗" wrapping, the nav short near 991, the grid tiles' 308 min-height on mobile, the footer's mobile gaps, the `tests/article.spec.ts:132` TS error, the dev badge at 390, the signal header next to amber on /tracker). The E3 TODO(joey) list is unchanged; no content file was touched.
+
+## E6.6: heading-h5 18/25.2 (nav links), signal tracker button · 2026-10-03
+- Built: nothing new.
+- Changed:
+  - `src/app/globals.css`:
+    * `type-heading-h5` 1.25rem / (28/20) → 1.125rem / 1.4, ≤991 1rem → 0.9375rem. ≤767 (14), weight, tracking unchanged.
+    * the shared hover rule: `--tile-fg: var(--tile-hover-fg, var(--color-ink))`, and the muted and line mixes read the same value. Unset, it's ink, so every other tile is unchanged.
+    * new `--spacing-target: max(1.5rem, 24px)` (see Decisions).
+  - `src/app/page.tsx`: the tracker button is `mode="signal"` with `[--tile-hover-bg:var(--color-ink)] [--tile-hover-fg:var(--color-paper)]` (was ink with a signal hover-bg). The comment explains the ink label and the paper strip.
+  - `src/components/Footer.tsx`: links `min-h-24` → `min-h-target`.
+  - Tests: `home.spec` "the bill tracker button: signal at rest, ink on hover and focus" (rest signal/ink/ink; hover and focus ink/paper/paper), and the strip test selects `[data-tile=signal]`. `scaling.spec`: new "heading-h5 computes to 18 at 1440, 15.75 at 1220 and 15 at 991"; the button selector is `[data-tile=signal]`. `shell.spec`: "nav targets are at least 24px tall" covers the Footer nav too.
+  - Docs: Part A A2 (signal and ink roles), A3 (`--tile-hover-fg` row; the tracker-button note replaces E6.3's; the hover line), A5 (h5 row 18 / 25.2, 15 / 21, plus an E6.6 note). CLAUDE.md §4 (signal and ink lines; E6.6 added and ticked). `docs/token-log.md`: 3 lines.
+- Decisions:
+  - **The button label is ink, not paper** (the prompt's call too): paper on signal is 3.47:1, and the heading-h4 label is under 24 below 1440.
+  - **Footer targets:** with the smaller h5 (line box 22.05 at the 14px root), footer links were 22 tall from 992 to 1280, because `min-h-24` is rem and computes to 21 there. Before this change the 24.5 line box hid it. Spacing would probably pass 2.5.8 anyway, but E6 treats < 24 as a bug, so I added one token on the existing `max(rem, px)` floor pattern rather than a raw px class. Now 24 at 992–1280 and ≤991, 25.2 at 1440.
+- Verified:
+  - `npm run lint` clean; Prettier clean on touched files; `npx tsc --noEmit` clean; `npm run build` passes; `npm run test:e2e`: **156 passed, 84 skipped**, 0 failed (+1 test, +4 skips). That includes axe 0 on `/` and all articles at all 5 widths, and the Home keyboard walk (every stop with a 2px ring, uncovered).
+  - **Mutation checks** (restored): with h5 at 1rem at ≤991, the no-growth and h5 tests fail ("heading-h5: 15.75 at 992 → 16 at 991"). With `min-h-24` on footer links, the target test fails at 1280 and 1024 (22.05).
+  - **Production (:3117, scratch scripts):** axe 0 on `/` and the Bilirakis post at 1440 and 390. Button: rest `rgb(255,67,1)` with ink label and arrow (1440 and 390); hover and Tab focus `rgb(8,8,12)` with paper label and arrow, focus ring solid 2px paper at −8; 0.3s, 0s under reduced motion.
+  - **heading-h5 users, before → after** (1440; 390 is unchanged at 14/19.6 for all): Topbar nav link 20 → 18 (link 37 → 34.2 tall), footer link 20 → 18 (28 → 25.2), the Home source line, PostMeta date, editor-note label ("Update · …", Bilirakis), /accessibility and /privacy "Updated" lines 20/28 → 18/25.2, "Track this bill" ActionRow 20 → 18 (target 37 → 34.2; 33 at 390), skip link 20 → 18 (76 → 73.2 tall). Pill 38 → 35.2 tall at 1440, 33.5 → 31 at 1220, 32.4 → 31 at ≤991, 29.6 at 390; padding is still 4 × 24 from tokens, and the text's centre is within 1px of the pill's (−0.09 at 1440, −0.52 at 1220, 0 at 991, −0.8 at 390).
+  - **Targets:** topbar nav links ≥ 28.6 at every width (30 at 992–1280); footer links ≥ 24.
+  - **Topbar row** (`--topbar-row`): 82 → 80 at 1440 (the nav is 76.4 now, inside the 80 min, so the token binds), 112 → 110 at 2560, 72 → 70 at 992–1280, 72.4 → 71 at 850–991, 93.2 → 89 at 768–827, 185 at 390 unchanged. The header with the statement: 256.2 → 254.2 at 1440.
+  - **"Joey Holzman ↗" in the Topbar:** it was 2 lines below 866; now below 828. Better, not fixed.
+  - **Eclipse** (archive, Playwright): `.nav_link-text` is 18 at 1440 and 15.75 at 1024 (root 14), the same as ours. At 768 Eclipse is back to 18 (we hold 15, the no-growth rule) and 16 at 390 (ours 14, E6). No token changed for parity.
+  - **Screenshots** in `screens/e6.6/`: topbar-{2560,1440,1220,1024,390}, footer-{same}, article-header-1440 (Bilirakis), button-{rest,hover,focus}-1440, button-rest-390.
+  - **Not done:** a Figma compare (the frames still have the old H5 and the old button).
+- Open for next prompt (E7):
+  - The topbar row grows 70 → 71 at the 991 jump (the nav is 67.1 at 992, 71 at 991; before it was 72 → 72.4). The scaling test probes the token, not the row, so it doesn't catch it.
+  - The footer's "Joey Holzman ↗" is 2 lines at 1024 (before and after this change).
+  - On phones the button's pressed/focused ink state sits beside the navy featured tile (1.12:1); the paper strip still separates them.
+  - Carried from E6.5: the 828w image variant that never loads, the empty navy in the featured band, the Figma updates, the icon-size hold at 991, the nav short near 991, the grid tiles' 308 min-height on mobile, the footer's mobile gaps, the `tests/article.spec.ts:132` TS error, the dev badge at 390, the signal header beside amber on /tracker. The E3 TODO(joey) list is unchanged; no content file was touched.
+
+## E6.7: No Home statement, bill heading display-h2 · 2026-10-03
+- Built: nothing new. `SITE_NAME` in `src/lib/site.ts` (used by `layout.tsx`'s metadata title and Home's h1).
+- Changed:
+  - `src/app/page.tsx`: the statement is gone. `<h1 className="sr-only">{SITE_NAME}</h1>` is the first child of `<main>`. The bill heading is `type-display-h2` with a top trim. The header row is `md:items-start` (was `md:items-baseline`, Joey mid-session: "aligned top"); the source line also trims its top from md, so both cap tops sit on the tile's top padding. The row gap is `md:gap-stack` (was `md:gap-x-stack`), so a wrapped source line sits 21 / 16 below the heading, like the stacked phone layout, instead of touching it.
+  - `src/components/Topbar.tsx`: no `children` slot. One className on every page (`z-0 focus-within:z-3`; the z only matters where it's sticky). **No bottom line on any page** (Joey mid-session: "get rid of the navbar border"; the prompt had asked for a shared `border-b`). `variant` only switches `data-sticky`.
+  - `src/app/globals.css`: `--statement-top` deleted. **display-h1/h2/h3 are back to their pre-E6.4 sizes** (Joey mid-session: "revert the three header typographies to their earlier larger size"): 90 / 66 / 38 (42 lh) at 1440, ≤991 h3 32/36. The three blocks are byte-identical to HEAD (E6).
+  - Tests: `home.spec` adds "one h1, visually hidden, naming the site" (count 1, text, ≤1px² box, `clip-path: inset(50%)`) and "the topbar is as tall on / as on an article" (1440 and 390, ±1); the no-JS test checks `#bills-heading` instead of the h1. `scaling.spec`: the display test now expects 90/66/38 at 1440 and 78.75/57.75/33.25 at 1220. The keyboard walk needed no change (the statement wasn't a stop).
+  - Docs: Part A A1 (3 rows: statement removed with an sr-only h1; topbar identical with no line; bill header top-aligned), A5 (the h1/h2/h3 rows and the ≤991 note; E6.4's paragraph marked as reverted), E2/E4/E6 statement notes annotated, `docs/token-log.md` (3 lines), CLAUDE.md (E6.7 added and ticked). CLAUDE.md didn't mention the statement.
+- Decisions:
+  - Home's h1 is "AI in Congress" (`SITE_NAME`). The other copies of that string (page `title`s, Logo `aria-label`, the footer disclaimer) are untouched.
+  - Topbar padding is the tile's (40 / 24 ≤991) on every page, so Home's bottom padding went 24 → 40.
+  - The Lawmakers post (volt header) now meets the mint topbar with no line: 1.0:1, but different hues, and it reads as an edge (`screens/e6.7/article-topbar-volt-1440.png`). A band edge isn't a UI component, so WCAG 1.4.11 doesn't apply.
+- Verified:
+  - `npm run lint` clean; `npx tsc --noEmit` clean (the old `tests/article.spec.ts:132` error is gone); Prettier clean on touched files; `npm run build` passes (bill-stats placeholder warning); `npm run test:e2e`: **163 passed, 87 skipped, 0 failed** (+7). Includes axe 0 on `/` at all 5 widths (1440 and 390 included) and the Home keyboard walk (skip → logo → nav → tracker button → … every stop 2px, uncovered).
+  - **Before (session start: statement, E6.4 type) → after (final)**, dev server, scroll 0:
+
+    | width | topbar | bill band | featured band top |
+    |---|---|---|---|
+    | 1440 | 254.2 → 160 | 442.4 → 485.8 | 696.6 → 645.8 (−50.8) |
+    | 1220 | 222.8 → 140 | 388 → 425.3 | 610.8 → 565.3 (−45.5) |
+    | 1024 | 222.8 → 140 | 415.1 → 490.9 | 637.9 → 630.9 (−7) |
+    | 390 | 320.6 → 233 | 478 → 524.2 | 798.6 → 757.2 (−41.4) |
+
+    Article topbar: 161/141/141/234 → 160/140/140/233 (line removed). With E6.4's smaller type (before the revert), the featured band top was 617.7 at 1440 and 541.1 at 1220.
+  - **Bill header** (sweep 320–2560, step 4): heading and source cap tops equal wherever they sit side by side (40 at 1440, 35 at 1220). The source line wraps at 768–780 and 992–1036 (gap 16 / 21, no overlap). The heading is 1 line at every md width, 2 at 390. No horizontal overflow.
+  - **Screenshots** in `screens/e6.7/` (first screen, final code): home-{2560,1440,1220,1024,768,390}, article-topbar-1440 (Bilirakis), article-topbar-volt-1440 (French Hill).
+  - **Not done:** a Figma compare (the frames still have the statement), and a live Eclipse pass (display sizes are Figma's again; h2 66 at 1440 equals Eclipse's 66, per E6.4's note).
+- Open for next prompt (E7):
+  - **Figma:** delete the statement row; the bill heading is Display/H2, top-aligned with the source line; no topbar bottom line; the topbar is 160 at 1440 on every page. Ignore the E6.4 Display lines (reverted).
+  - With 90/66/38 back, the featured TAKE IT DOWN title is 3 lines at 1440 (the featured-band test still passes), and E6.4's notes on wrapping and header heights are reversed.
+  - Carried from E6.6: the 828w image variant that never loads, the topbar row 70 → 71 at 991, the footer "Joey Holzman ↗" wrapping at 1024, the icon-size hold at 991, the grid tiles' 308 min-height on mobile, the footer's mobile gaps, the dev badge at 390, and the signal header beside amber on /tracker. The E3 TODO(joey) list is unchanged; no content file was touched.
+
+## E6.8: Paper text on signal, ≥ 24px · 2026-10-03
+- Built: `type-heading-h4-24` in `src/app/globals.css`: heading-h4 with `max(…, 24px)` at every tier (1.5rem / 1.25rem ≤991 / 1rem ≤767).
+- Changed:
+  - `src/app/globals.css`: `[data-tile="signal"]` `--tile-fg` ink → paper (muted = fg, line 20% of fg, so both follow), with a why comment.
+  - `src/app/page.tsx`: the tracker button label is `type-heading-h4-24`; the comment above it now says paper. The hover and focus classes are unchanged from E6.6.
+  - `src/app/posts/[slug]/Rail.tsx`: the cap h2 is `type-heading-h4-24`.
+  - `src/app/tracker/page.tsx`: the sentence is `type-display-h3` (was text-large).
+  - `src/app/styleguide/page.tsx`: `type-heading-h4-24` is in the Type list (the scaling test reads it by id), and the signal mode demo block is `type-heading-h4-24`, so it no longer shows small paper text on signal.
+  - Tests: `home.spec` "signal text is never under 24px" becomes "signal text, and all text on signal, is never under 24px". It covers /, /tracker and the Bilirakis article at 1440, 1280, 991 and 390, checking signal-colored elements plus every non-empty text node inside `[data-tile=signal]`. The button test at rest expects a paper label and arrow. `article.spec` "rail: the cap is signal, its heading paper". `scaling.spec`: `type-heading-h4-24` is in the no-growth table and asserted ≥ 24 at every width.
+  - Docs: CLAUDE.md §4 (the button's paper label; the paper ≥ 24px rule for signal tiles), §5 (one sentence), Progress (E6.8 added and ticked). Part A: A2 (signal row; a "24px rule" bullet with the WCAG 2 vs APCA line), A3 (signal mode row is paper; the tracker-button and signal-tile notes), A5 (a `heading-h4-24` row; "rail cap" removed from heading-h4's uses). `docs/token-log.md`: 1 carry-to-Figma line.
+- Decisions:
+  - **The line height is 31/24 at every tier, not h4's ≤991 ratio (26/20 = 1.3).** The size is a constant 24 below 1440, so 1.3 would make the line grow 31 → 31.2 at 991 and fail the no-growth test. At the 24px size, 31/24 is h4's own ratio.
+  - **Per-tier `max()` rather than one `max(1.5rem, 24px)`:** identical at the default 16px browser font. Under a larger default it keeps h4's step-down at 991, so it doesn't grow at the jump.
+  - **Size changes from the 24px floor:** the tracker button is 112 at 1440 (unchanged), 98 → 101 at 1280 (label line 27.1 → 31) and 80 at 390. The rail cap is 95 at 1440 (unchanged) and 71 at 390. The /tracker sentence is 38/42 at 1440 and 24/27.6 at 390, still one line at both.
+  - I didn't recompute the APCA figures (Lc 43 / 66); they're the prompt's.
+- Verified:
+  - `npm run lint` clean; `npx tsc --noEmit` clean; Prettier clean on `src` and `tests`; `npm run build` passes (bill-stats placeholder warning); `npm run test:e2e` (dev server on :3000): **163 passed, 87 skipped, 0 failed**. That includes axe 0 on `/` and `/tracker` at 1440, 1280, 1024, 768 and 390 and on all 6 articles at all 5 widths (paper on signal at 24px counts as large text), plus the Home, /tracker and article keyboard walks (every stop has a 2px ring and is uncovered).
+  - **Mutation check:** with the button label back on `type-heading-h4`, the widened test fails ("/ at 1280: "Explore the bill tracker", Expected ≥ 24, Received 21"). File restored.
+  - **Computed** (scratch script): `type-heading-h4-24` is 33/42.6 at 2560 and 1920, and 24/31 at 1440, 1280, 992, 991, 768, 767 and 390. Button at rest: bg `rgb(255,67,1)`, label and arrow `rgb(255,255,255)`, 24px (1440, 1280 and 390). On hover: bg `rgb(8,8,12)`, paper label and arrow. On keyboard focus: the same, with a solid 2px paper ring. Rail cap h2: paper, 24/31 at 1440 and 390. /tracker sentence: paper, 38px at 1440 and 24px at 390.
+  - **Screenshots** in `screens/e6.8/`: button-rest-{1440,1280,390}, button-hover-1440, button-focus-1440, rail-cap-{1440,390} (the Bilirakis rail), tracker-{1440,390}.
+  - **Not done:** a Figma compare (the frames still show the E6.3 button) and an Eclipse pass (no scale, spacing or layout value changed for parity).
+- Open for next prompt (E7):
+  - **Figma:** signal tiles have paper text; add the Heading/H4 24px floor for the button label and the rail cap; the /tracker sentence is Display/H3.
+  - The /tracker signal header still sits directly on the amber newsletter band (now paper text above ink text on adjacent warm colors).
+  - Carried from E6.7: the 828w image variant that never loads, the topbar row 70 → 71 at 991, the footer's "Joey Holzman ↗" wrapping at 1024, the icon-size hold at 991, the grid tiles' 308 min-height on mobile, the footer's mobile gaps and the dev badge at 390. The E3 TODO(joey) list is unchanged; no content file was touched.
+
+## E6.9: Article topbar in the header color · 2026-10-03
+- Built: `src/app/posts/[slug]/Title.tsx`, a small client component (the article h1). It counts the title's lines at display-h2 with a ResizeObserver (on width changes and font load) and sets `data-long` when there are more than 3; `data-long:type-display-h3` steps it down. Without JS it stays h2. Added mid-session at Joey's request ("if the title exceeds three lines, it should go down a typography"); he picked in-browser measurement over a character-length rule.
+- Changed:
+  - `src/components/Topbar.tsx`: optional `mode?: TileMode` (default "mint"). Off mint, `border-b border-tile-line` (a hairline). No hard-coded ink was there: the Logo is `currentColor` and the links are `border-tile-fg`, so the mode recolors everything. No second logo file.
+  - `src/app/posts/[slug]/page.tsx`: `headerMode` const, passed to both the Topbar and the header Tile; the h1 is `<Title>`.
+  - Tests: `article.spec`, per post (one per header mode, all 5 widths): "the topbar takes the header's color…" (topbar mode and bg = the header's; logo and all 5 nav links = the topbar fg; hairline solid 1px; tabbing through the logo and 5 nav links, each ring is solid 2px in the fg, ≥ 3:1 on the topbar, and uncovered); "over 3 lines at display-h2, the title steps down to display-h3" (data-long ⇔ h2 lines > 3; size and line height equal a display-h3 reference in the same header; text-box-trim stays none). `home.spec`: "the topbar is mint, with no bottom line". `shell.spec`: "the logo never sets the topbar's height (md and up)" (logo height < nav height and < row height).
+  - Docs: CLAUDE.md §4 (mint and category-color lines; E6.9 added and ticked). Part A: A1 (2 rows: article topbar, long titles), A4 (topbar paragraph with the contrast figures), A5 (display-h2 "article title" note). `docs/token-log.md`: 2 carry-to-Figma lines.
+- Decisions:
+  - **The hairline went off, then back on (Joey mid-session):** "no bottom border on nav", then "add the bottom border back … but only on article pages". It's keyed on `mode !== "mint"`, so the post pages get it and Home, /tracker, /privacy and /accessibility (mint, same `variant="article"`) don't. The article topbar is 161 at 1440 and 234 at 390 (Home: 160 / 233); the E6.7 "as tall on / as on an article" test allows ±1.
+  - **Logo size (Joey mid-session: "small enough so that it is not needlessly increasing the container padding of the navbar"):** measured, and no change needed. From md up the logo is always shorter than the nav and the row: at 1440 the logo is 72, the nav 76.4 and the row 80 (`--topbar-row`); 63 / 67.1 / 70 at 992–1280; 62.8 / 71 / 71 at 828–991; 62.8 / 89 / 89 at 768. The row height comes from `--topbar-row` (≥ 992) or the nav (≤ 991), never the logo. Below md the logo stacks above the nav (62.8 + 16 gap + 106.2 nav = 185 row), which is the layout, not padding. The new shell test guards it; a 192-wide logo fails it (83.8 > 76.4 at 1440).
+  - **Title line counts at h2, before → after** (≥ 992 / 390): Comparing 4 → h3 2 / 4 → h3 3; House 4 → h3 2 / 3 (h2); Bilirakis 4 → h3 2 / 4 → h3 3; French Hill 2 / 2; States 3 / 3; TAKE IT DOWN 3 / 3 (all h2). At 768–991 every title is ≤ 3 lines at h2. At 320, Bilirakis is still 4 lines at h3 (there's no smaller step).
+- Verified:
+  - `npm run lint` clean; `npx tsc --noEmit` clean; Prettier clean on `src` and `tests`; `npm run build` passes (bill-stats placeholder warning); `npm run test:e2e`: **232 passed, 88 skipped, 0 failed**. That includes axe 0 on all 6 articles at 1440, 1280, 1024, 768 and 390, the new topbar keyboard walk on all 6 modes (navy and volt included) at all 5 widths, and the existing Deepfakes (navy) full-page keyboard walk.
+  - **Mutation checks** (restored): without `mode={headerMode}` the topbar test fails on all 6 ("Expected navy, Received mint", etc.); with the title threshold at 30 the title test fails on the 3 long posts at 1440 ("4 lines at h2").
+  - **Computed** (scratch script, dev): the topbar bg equals the header's on all 6; the hairline is `rgba(ink, 0.12)` on blush, volt and sand, `rgba(ink, 0.2)` on sage, and `rgba(paper, 0.2)` on navy and slate.
+  - **Screenshots** in `screens/e6.9/`: article-top-{blush,navy,slate,volt,sand,sage}-1440, article-top-{navy,volt,blush}-390 (blush shows the stepped-down title), topbar-focus-{navy,volt}-1440 (ring on "Privacy Policy").
+  - **Not done:** a Figma compare (the frame has a mint topbar and an H2 title) and an Eclipse pass (no scale, spacing or layout token changed).
+- Open for next prompt (E7):
+  - **Figma:** the article topbar takes the header color with the hairline; long titles use Display/H3 (token-log).
+  - **The title steps down after hydration,** so on a slow load the 3 long posts render at h2 (4 lines) first and then shrink: a one-time layout shift. The header is 637 tall at 1440 with an h3 title vs 751 with a 3-line h2 title, so a 3-line title looks much larger than a 4-line one. A middle step would smooth that; it's Joey's call.
+  - Carried from E6.8: the /tracker signal header against amber, the 828w image variant that never loads, the topbar row 70 → 71 at 991, the footer's "Joey Holzman ↗" wrapping at 1024, the icon-size hold at 991, the grid tiles' 308 min-height on mobile, the footer's mobile gaps and the dev badge at 390. The E3 TODO(joey) list is unchanged; no content file was touched.
+
+## E6.10: Root above 1440 = max(1rem, 0.859vw), cap at 2560 · 2026-10-03
+- Built: nothing new.
+- Changed:
+  - `src/app/globals.css`: the `(min-width: 1920px) { 1.375rem }` rule is replaced by `(min-width: 1440px) { max(1rem, 0.859375vw) }` and `(min-width: 2560px) { 1.375rem }`, with a why comment. The base, ≤1280 and ≤991 rules are untouched.
+  - `tests/scaling.spec.ts`: widths now start 3440, 2560, 2048, 1920, 1862, 1600 (both no-growth tables run them). New "the root is 16 to 1862, 16.5 at 1920, 17.6 at 2048 and 22 from 2560" and "zoom up to 500% doubles the text at 1920 and 2560" (a context per zoom z: viewport width/z, `deviceScaleFactor` z; passes if some z in 2–5 gives root × z ≥ 2 × the 100% root). The display test adds 2560 and 1920 rows (rounded to 2 decimals).
+  - Docs: Part A A6 (CSS block, an "Above 1440" note, the `max()` paragraph now says 1281–2559 and the 1.57× zoom headroom), `docs/token-log.md` (1 line), CLAUDE.md (E6.10 added and ticked). CLAUDE.md §6 didn't quote the 1920 cap. E6.4's history paragraph in A5 ("root capped at 1920") was left alone as history.
+- Decisions:
+  - **The prompt's display figures were stale.** "99/71.5/44 at 1920+" and "74.25/53.6/33 at 1920" are E6.4's sizes, which E6.7 reverted, and no test asserted them. With the current tokens (5.625/4.125/2.375rem) the test expects **92.81/68.06/39.19 at 1920** and **123.75/90.75/52.25 at 2560+**.
+  - Between 1440 and 1862 the root is a flat 16, so those windows get exactly the 1440 type and spacing, with the %-based columns simply wider.
+  - Zoom headroom, measured: at 1920 (root 16.5), 200% gives 32 device px (< 33), but 300% gives 48. At 2560 (22), 200% gives 28 (root 14 at 1280), but 300% gives 48. Both pass the 2× check by 300%.
+- Verified:
+  - `npm run lint` clean; `npx tsc --noEmit` clean; Prettier clean on `src` and `tests`; `npm run build` passes; `npm run test:e2e`: **234 passed, 96 skipped, 0 failed** (+2 tests, +8 skips).
+  - **Mutation check:** with the old 1920 cap restored, the root test fails ("root at 1600: Expected 16, Received 18"). File restored.
+  - **Roots (dev, scratch script):** 16 at 1440 and 1600, 16.0016 at 1862, 16.5 at 1920, 17.6 at 2048, 22 at 2560 and 3440.
+  - **1920×950, before → after:** root 22 → 16.5; bill heading 90.75 → 68.06; topbar 220 → 165 (article 221 → 166), still sticky (fits); featured band 950 (svh-capped) → 832.2 (its min-height; fits); grid tiles 486.8 / 520.9 (two titles grew their tiles) → 365.1 all five; the Bilirakis rail 721.8 → 475.6, sticky either way (fits with its 80 margin). 1440×790 and 2560×1305 measure identical before and after.
+  - **axe:** 0 violations on `/` and the Bilirakis article at 1920×950 and 2560×1305. Keyboard (scratch): 22 stops on `/`, 25 on the article, none covered, at both sizes.
+  - **Screenshots** in `screens/e6.10/`: home and article at 1440x790, 1920x950 and 2560x1305 (first screen), the `-before` versions of each, and `{home,article}-1920x950-before-after.png` side by side.
+  - **Not done:** a live Eclipse pass (this is a deliberate departure from Eclipse above 1440, logged as taste) and a Figma compare (the frame is 1440, which didn't change).
+- Open for next prompt (E7):
+  - **The 828w image variant still hangs** (E6.5): a 1600-wide window waiting for `networkidle` on `/` times out. The root change doesn't affect `sizes`, so it's not new.
+  - Carried from E6.9: the title's post-hydration step-down, the /tracker signal header against amber, the topbar row 70 → 71 at 991, the footer's "Joey Holzman ↗" wrapping at 1024, the icon-size hold at 991, the grid tiles' 308 min-height on mobile, the footer's mobile gaps and the dev badge at 390. The E3 TODO(joey) list is unchanged; no content file was touched.
+- **Follow-up (same session): the featured tile hovers to amber.** Joey's call. `src/app/page.tsx`: the featured Tile gets `[--tile-hover-bg:var(--color-amber)]`; `--tile-hover-fg` stays unset, so the title, dek, arrow and pill go ink and the date ink 72% (about 6.1:1 on amber), with the same 300ms fade and the ink focus ring. Grid tiles still hover to mint. `tests/home.spec.ts`: the hover test expects amber/ink on the featured tile on focus and on hover. Docs: CLAUDE.md §4 (mint line), Part A A3 (a featured-tile note; the hover line), token-log (1 carry-to-Figma line). This bends §4's "amber is the newsletter" mapping; recorded as an exception rather than changing the rule.
+- **Follow-up (same session): the grid tiles are ink, hovering to paper.** Joey's call. `src/components/PostTile.tsx`: `mode="ink"` (was paper) plus `[--tile-hover-bg:var(--color-paper)]`; `--tile-hover-fg` unset, so hover and focus give ink text, ink 72% date, 12% lines and an ink focus ring (measured at 1440 and 390; axe 0 at rest and hovered). `tests/home.spec.ts`: the hover test checks the grid tile ink/paper at rest and paper/ink on hover. Docs: CLAUDE.md §4 (ink line; mint is now unused as a hover on Home), Part A A3, token-log (1 line). Screenshots: `screens/e6.10/grid-{rest,hover,focus}-{1440,390}.png`. **Seams to look at:** at md and up the ink grid sits directly under the navy featured tile (1.12:1, a band edge, no line); below md it sits under the placeholder image, whose dark bottom (the suit) nearly merges with ink. Neither is a WCAG issue (not UI components), but both read as weak edges; a `tile-line` top border would be the smallest fix if wanted.

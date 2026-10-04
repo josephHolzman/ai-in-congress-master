@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { SITE_LIVE } from "@/lib/site";
+import { SITE_LIVE, SITE_NAME } from "@/lib/site";
 import "./globals.css";
 
 const switzer = localFont({
@@ -21,7 +21,7 @@ const switzer = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "AI in Congress",
+  title: SITE_NAME,
   robots: SITE_LIVE ? undefined : { index: false, follow: false },
 };
 

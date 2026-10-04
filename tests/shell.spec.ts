@@ -4,9 +4,9 @@ import { expect, test } from "@playwright/test";
 const navOrder = [
   "Articles",
   "Privacy Policy",
-  "Joey Holzman (external site)",
   "Bill Tracker",
   "Accessibility",
+  "Joey Holzman (external site)",
 ];
 
 test.beforeEach(async ({ page }) => {
@@ -53,12 +53,28 @@ test("keyboard order, with a visible 2px outline on every stop", async ({
 });
 
 test("nav targets are at least 24px tall", async ({ page }) => {
-  for (const link of await page
-    .getByRole("navigation", { name: "Main" })
-    .getByRole("link")
-    .all()) {
-    expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(24);
+  for (const name of ["Main", "Footer"]) {
+    for (const link of await page
+      .getByRole("navigation", { name })
+      .getByRole("link")
+      .all()) {
+      expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(24);
+    }
   }
+});
+
+test("the logo never sets the topbar's height (md and up)", async ({
+  page,
+}) => {
+  // Below md the logo stacks above the nav, so it adds its height by design.
+  test.skip((page.viewportSize()?.width ?? 0) < 768, "md and up");
+  const m = await page.locator("header").evaluate((el) => ({
+    logo: el.querySelector("svg[role=img]")!.getBoundingClientRect().height,
+    nav: el.querySelector("nav")!.getBoundingClientRect().height,
+    row: el.firstElementChild!.getBoundingClientRect().height,
+  }));
+  expect(m.logo).toBeLessThan(m.nav);
+  expect(m.logo).toBeLessThan(m.row);
 });
 
 test("no horizontal scroll, down to 320", async ({ page }) => {
@@ -71,6 +87,22 @@ test("no horizontal scroll, down to 320", async ({ page }) => {
   expect(await fits()).toBe(true);
   await page.setViewportSize({ width: 320, height: 800 });
   expect(await fits()).toBe(true);
+});
+
+test("newsletter: an amber band, the input edged in 1px ink", async ({
+  page,
+}) => {
+  const band = await page
+    .locator("#newsletter-heading")
+    .evaluate(
+      (h) => getComputedStyle(h.closest("[data-tile]")!).backgroundColor,
+    );
+  expect(band).toBe("rgb(255, 174, 61)");
+  const input = await page.locator("#newsletter-email").evaluate((el) => {
+    const style = getComputedStyle(el);
+    return `${style.borderTopWidth} ${style.borderTopStyle} ${style.borderTopColor}`;
+  });
+  expect(input).toBe("1px solid rgb(8, 8, 12)");
 });
 
 test("submit announces the pre-launch message", async ({ page }) => {

@@ -31,9 +31,12 @@
   --spacing-24: 1.5rem;
   --spacing-32: 2rem;
   --spacing-40: 2.5rem;
+  --spacing-48: 3rem;
   --spacing-56: 3.5rem;
   --spacing-80: 5rem;
   --spacing-140: 8.75rem;
+  /* WCAG 2.5.8 counts CSS px, and 1.5rem is 21 at the 14px root. */
+  --spacing-target: max(1.5rem, 24px);
 }
 
 /* Layout tokens switch at 991, so the utilities read them at use time. */
@@ -68,23 +71,21 @@
 
   /* Shell sizes from Figma (px at 1440). */
   --logo-topbar: 10.3125rem; /* 165 */
-  --logo-footer: 40.5rem; /* 648 */
-  /* Equal columns over the right half (Topbar). The bill band's action row
-     reuses them, with the same gap, to line up under them. */
+  --mark-footer: 20.0625rem; /* 321 */
+  /* Equal columns over the right half (Topbar). */
   --nav-cols: repeat(3, minmax(0, 1fr));
   /* The right group starts on the 50% line + 112 (x 832 at 1440); the tile's
      padding is symmetric, so 50% of its content box lands on that line. */
   --footer-cols: calc(50% + 7rem) minmax(0, 1fr);
   --disclaimer: 35rem;
+  --topbar-row: var(--spacing-80);
 
   /* Home sizes from Figma (px at 1440). */
-  --band-featured: 50.4375rem; /* 807 */
+  /* At most one screen tall, so the title, dek and arrow fit in one view.
+     Still a min-height: longer content grows the band. */
+  --band-featured: min(50.4375rem, 100svh); /* 807 */
   --post-tile: 22.125rem; /* 354 */
   --dek: 30.625rem; /* 490 */
-  /* Figma measures the statement's 53 from its untrimmed box; our trimmed
-     cap top lands at Figma's (182 at 1440) with tile-top-md minus one line's
-     trim. lh and cap resolve on the element that uses it. */
-  --statement-top: calc(var(--layout-tile-top-md) - 1lh + 1cap);
 }
 
 /* The root jumps 14 → 16px at 991, so layout steps down there too (A7).
@@ -100,16 +101,18 @@
     --layout-image-overlap: 5.6875rem; /* 91 */
     /* Home sizes hold at their 1024 size, rounded down (706 / 309.75 /
        428.75), instead of jumping back to 807 / 354 / 490. */
-    --band-featured: 44rem; /* 704 */
+    --band-featured: min(44rem, 100svh); /* 704 */
     --post-tile: 19.25rem; /* 308 */
     --dek: 26.75rem; /* 428 */
-    /* Shell sizes and the measure hold at their 992 size (144.4 / 567 / 560;
-       nav columns 139.7 with a 21 gap, so 3 × 143 + 2 × 16 ≤ 461) instead of
-       growing with the root. */
+    /* Shell sizes and the measure hold at their 992 size (144.4 / 280.9 /
+       560 / 490 / 70; nav columns 139.7 with a 21 gap, so 3 × 143 + 2 × 16
+       ≤ 461) instead of growing with the root. */
     --logo-topbar: 9rem; /* 144 */
-    --logo-footer: 35.4375rem; /* 567 */
+    --mark-footer: 17.5rem; /* 280 */
     --nav-cols: repeat(3, minmax(0, 8.9375rem)); /* ≤ 143 each */
     --measure: 35rem; /* 560 */
+    --disclaimer: 30.625rem; /* 490 */
+    --topbar-row: 4.375rem; /* 70 */
   }
 }
 
@@ -120,7 +123,7 @@
   :root {
     --layout-image-overlap: var(--spacing-56);
     --nav-cols: repeat(2, minmax(0, 1fr));
-    --logo-footer: 60%;
+    --mark-footer: min(60%, 17.5rem);
   }
 }
 
@@ -197,9 +200,11 @@
     --tile-fg-muted: var(--tile-fg);
     --tile-line: color-mix(in srgb, var(--tile-fg) 20%, transparent);
   }
+  /* Paper, not ink: ink reads poorly on signal (APCA Lc 43) despite 5.76:1.
+     Paper is 3.47:1, so text on signal is always ≥ 24px (E6.8). */
   [data-tile="signal"] {
     --tile-bg: var(--color-signal);
-    --tile-fg: var(--color-ink);
+    --tile-fg: var(--color-paper);
     --tile-fg-muted: var(--tile-fg);
     --tile-line: color-mix(in srgb, var(--tile-fg) 20%, transparent);
     --tile-hover-bg: var(--color-signal);
@@ -221,7 +226,8 @@
     --tile-line: color-mix(in srgb, var(--tile-fg) 20%, transparent);
   }
 
-  /* Hover and focus switch the whole mode to mint, not just the background. */
+  /* Hover and focus switch the whole mode (mint and ink by default), not just
+     the background. */
   [data-tile][data-interactive] {
     transition-property: --tile-bg, --tile-fg, --tile-fg-muted, --tile-line;
     transition-duration: 300ms;
@@ -229,13 +235,17 @@
   }
   [data-tile][data-interactive]:is(:hover, :focus-within) {
     --tile-bg: var(--tile-hover-bg);
-    --tile-fg: var(--color-ink);
+    --tile-fg: var(--tile-hover-fg, var(--color-ink));
     --tile-fg-muted: color-mix(
       in srgb,
-      var(--color-ink) calc(var(--muted) * 100%),
+      var(--tile-hover-fg, var(--color-ink)) calc(var(--muted) * 100%),
       transparent
     );
-    --tile-line: color-mix(in srgb, var(--color-ink) 12%, transparent);
+    --tile-line: color-mix(
+      in srgb,
+      var(--tile-hover-fg, var(--color-ink)) 12%,
+      transparent
+    );
   }
   @media (prefers-reduced-motion: reduce) {
     [data-tile][data-interactive] {
@@ -323,14 +333,30 @@
     font-size: 1rem;
   }
 }
+/* h4 that never computes under 24px, for text on signal (E6.8). The line
+   height stays 31/24: the size is a constant 24 below 1440, so h4's ≤991
+   ratio (1.3) would make the line grow 31 → 31.2 at 991. */
+@utility type-heading-h4-24 {
+  font-family: var(--font-switzer);
+  font-size: max(1.5rem, 24px);
+  line-height: calc(31 / 24);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  @media (max-width: 991px) {
+    font-size: max(1.25rem, 24px);
+  }
+  @media (width < 48rem) {
+    font-size: max(1rem, 24px);
+  }
+}
 @utility type-heading-h5 {
   font-family: var(--font-switzer);
-  font-size: 1.25rem;
-  line-height: calc(28 / 20);
+  font-size: 1.125rem;
+  line-height: 1.4;
   font-weight: 600;
   letter-spacing: -0.015em;
   @media (max-width: 991px) {
-    font-size: 1rem;
+    font-size: 0.9375rem;
   }
   @media (width < 48rem) {
     font-size: 0.875rem;
@@ -412,7 +438,8 @@
 }
 
 @layer base {
-  /* Fluid root (A6): 16px at 1440, fixed 14px to 1280, 16px from 991 down.
+  /* Fluid root (A6): 16px at 1440, fixed 14px to 1280, 16px from 991 down,
+     22px from 2560 up.
      The max() floor lets a larger browser default font size win over vw. */
   html {
     font-size: max(0.875rem, calc(-0.125rem + 1.25vw));
@@ -427,7 +454,14 @@
       font-size: 1rem;
     }
   }
-  @media (min-width: 1920px) {
+  /* Above 1440, a flatter slope than Eclipse's: 22px at 2560 and 16.5 at 1920
+     are the same physical size on a 27" 1440p and a 27" 1080p monitor (E6.10). */
+  @media (min-width: 1440px) {
+    html {
+      font-size: max(1rem, 0.859375vw);
+    }
+  }
+  @media (min-width: 2560px) {
     html {
       font-size: 1.375rem;
     }
@@ -446,9 +480,9 @@
     outline-offset: calc(var(--spacing-8) * -1);
   }
 
-  /* Sticky cascade (A9): a layer sticks only where StickyFit marked it as
-     fitting the viewport, and never on small screens or under reduced motion.
-     Layer order comes from z-* utilities on each layer. */
+  /* Sticky layers (A9): the Home topbar and the article rail stick only where
+     StickyFit marked them as fitting the viewport, and never on small screens
+     or under reduced motion. */
   [data-sticky] {
     position: relative;
   }

@@ -16,8 +16,8 @@ export function Rail({ bills }: { bills: Bill[] }) {
       data-sticky-margin="80"
       className="focus-within:z-3 max-xl:relative xl:col-start-4 xl:row-start-1 xl:self-start"
     >
-      <Tile mode="amber" className="pb-stack">
-        <h2 id="rail-heading" className={`${content} type-heading-h4`}>
+      <Tile mode="signal" className="pb-stack">
+        <h2 id="rail-heading" className={`${content} type-heading-h4-24`}>
           Bills in this article
         </h2>
       </Tile>

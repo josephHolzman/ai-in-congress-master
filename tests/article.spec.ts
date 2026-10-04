@@ -49,6 +49,109 @@ for (const s of slugs) {
     ).toBe(true);
   });
 
+  test(`${s}: the topbar takes the header's color, logo, links and rings in its fg, a hairline below`, async ({
+    page,
+  }) => {
+    await open(page, s);
+    const colors = await page.evaluate(() => {
+      const topbar = document.querySelector("header[data-tile]")!;
+      const header = document.querySelector("main > [data-tile]")!;
+      return {
+        mode: topbar.getAttribute("data-tile"),
+        headerMode: header.getAttribute("data-tile"),
+        bg: getComputedStyle(topbar).backgroundColor,
+        headerBg: getComputedStyle(header).backgroundColor,
+        fg: getComputedStyle(topbar).color,
+        logo: getComputedStyle(topbar.querySelector("svg[role=img]")!).color,
+        links: [...topbar.querySelectorAll("nav a")].map(
+          (a) => getComputedStyle(a).color,
+        ),
+        hairline: `${getComputedStyle(topbar).borderBottomStyle} ${getComputedStyle(topbar).borderBottomWidth}`,
+      };
+    });
+    expect(colors.mode).toBe(colors.headerMode);
+    expect(colors.bg).toBe(colors.headerBg);
+    expect(colors.logo).toBe(colors.fg);
+    expect(colors.links).toHaveLength(5);
+    for (const link of colors.links) expect(link).toBe(colors.fg);
+    expect(colors.hairline).toBe("solid 1px");
+
+    // Every topbar stop: a solid 2px ring in the fg, ≥ 3:1 on the topbar.
+    const stops: string[] = [];
+    for (let i = 0; i < 10; i++) {
+      await page.keyboard.press("Tab");
+      const stop = await page.evaluate(() => {
+        const el = document.activeElement as HTMLElement;
+        const topbar = document.querySelector("header[data-tile]")!;
+        if (!topbar.contains(el)) return null;
+        const rgb = (c: string) => c.match(/[\d.]+/g)!.map(Number);
+        const lum = (c: string) => {
+          const [r, g, b] = rgb(c).map((v) => {
+            v /= 255;
+            return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+          });
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        };
+        const style = getComputedStyle(el);
+        const [hi, lo] = [
+          lum(style.outlineColor),
+          lum(getComputedStyle(topbar).backgroundColor),
+        ].sort((a, b) => b - a);
+        return {
+          name: el.textContent?.trim() || "logo",
+          outline: `${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor}`,
+          fg: getComputedStyle(topbar).color,
+          contrast: (hi + 0.05) / (lo + 0.05),
+        };
+      });
+      if (!stop) {
+        if (stops.length) break;
+        continue; // the skip link comes first
+      }
+      expect(stop.outline, stop.name).toBe(`solid 2px ${stop.fg}`);
+      expect(stop.contrast, stop.name).toBeGreaterThanOrEqual(3);
+      expect(await focusIsVisible(page), `${stop.name} is covered`).toBe(true);
+      stops.push(stop.name);
+    }
+    expect(stops).toHaveLength(6); // the logo and 5 nav links
+  });
+
+  test(`${s}: over 3 lines at display-h2, the title steps down to display-h3`, async ({
+    page,
+  }) => {
+    await open(page, s);
+    const t = await page.locator("h1").evaluate((h1) => {
+      const measure = () => {
+        const style = getComputedStyle(h1);
+        const lh = parseFloat(style.lineHeight);
+        return {
+          size: style.fontSize,
+          lh: style.lineHeight,
+          lines: Math.round(h1.getBoundingClientRect().height / lh),
+          trim: style.getPropertyValue("text-box-trim"),
+        };
+      };
+      const long = h1.hasAttribute("data-long");
+      const now = measure();
+      h1.removeAttribute("data-long");
+      const h2 = measure();
+      h1.toggleAttribute("data-long", long);
+      // A display-h3 reference, measured in the same header.
+      const ref = document.createElement("p");
+      ref.className = "type-display-h3";
+      h1.after(ref);
+      const h3 = getComputedStyle(ref);
+      const h3Size = { size: h3.fontSize, lh: h3.lineHeight };
+      ref.remove();
+      return { long, now, h2, h3: h3Size };
+    });
+    expect(t.long, `${t.h2.lines} lines at h2`).toBe(t.h2.lines > 3);
+    expect([t.now.size, t.now.lh]).toEqual(
+      t.long ? [t.h3.size, t.h3.lh] : [t.h2.size, t.h2.lh],
+    );
+    expect(t.now.trim).toBe("none"); // untrimmed in both sizes
+  });
+
   test(`${s}: header text is full-strength tile fg, back link ≥ 4.5:1`, async ({
     page,
   }, { project }) => {
@@ -88,6 +191,45 @@ for (const s of slugs) {
     expect(header.contrast, header.mode!).toBeGreaterThanOrEqual(4.5);
   });
 }
+
+test("the header color shows beside the image's top edge", async ({ page }, {
+  project,
+}) => {
+  onlyAt1440(project.name);
+  for (const [width, overlap] of [
+    [1440, 104],
+    [991, 91],
+    [390, 56],
+  ]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const s of slugs) {
+      await open(page, s);
+      const m = await page.evaluate(() => {
+        const header = document.querySelector("main > [data-tile]")!;
+        const paper = header.nextElementSibling!;
+        const img = document.querySelector("main figure > div")!;
+        const box = img.getBoundingClientRect();
+        // The image's transparent padding wrapper is the hit target here, so
+        // ask which tile sits under the point, not which tile it belongs to.
+        const tile = document
+          .elementsFromPoint(box.left - 8, box.top + 8)
+          .find((el) => el.matches("[data-tile]"));
+        return {
+          mode: header.getAttribute("data-tile"),
+          headerIsHit: tile === header,
+          overlap: header.getBoundingClientRect().bottom - box.top,
+          seam:
+            paper.getBoundingClientRect().top -
+            header.getBoundingClientRect().bottom,
+        };
+      });
+      const at = `${m.mode} at ${width}`;
+      expect(m.headerIsHit, at).toBe(true);
+      expect(m.overlap, at).toBeCloseTo(overlap, 0);
+      expect(Math.abs(m.seam), at).toBeLessThanOrEqual(1);
+    }
+  }
+});
 
 test("heading outline", async ({ page }, { project }) => {
   onlyAt1440(project.name);
@@ -164,6 +306,23 @@ test("rail: below 1280 it's a block before the body and never sticks", async ({
     .locator("article")
     .evaluate((el) => el.getBoundingClientRect().top);
   expect(article).toBeGreaterThan(await top());
+});
+
+test("rail: the cap is signal, its heading paper", async ({ page }) => {
+  await open(page, CHILD_SAFETY);
+  const cap = await page
+    .locator("aside > [data-tile]")
+    .first()
+    .evaluate((el) => ({
+      mode: el.getAttribute("data-tile"),
+      bg: getComputedStyle(el).backgroundColor,
+      heading: getComputedStyle(el.querySelector("h2")!).color,
+    }));
+  expect(cap).toEqual({
+    mode: "signal",
+    bg: "rgb(255, 67, 1)",
+    heading: "rgb(255, 255, 255)",
+  });
 });
 
 test("no aside without bills", async ({ page }) => {

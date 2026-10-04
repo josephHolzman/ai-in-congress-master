@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight } from "@carbon/icons-react";
-import { Logo } from "@/components/Logo";
+import { Mark } from "@/components/Mark";
 import { Tile } from "@/components/Tile";
 import { NAV_LINKS } from "@/lib/site";
 
@@ -8,22 +8,24 @@ export function Footer() {
   return (
     <Tile mode="ink" as="footer">
       <div className="grid gap-y-tile-md lg:grid-cols-(--footer-cols)">
-        <Logo
-          width="var(--logo-footer)"
+        <Mark
+          width="var(--mark-footer)"
           className="block max-w-full text-mint"
         />
         <div>
           <nav aria-label="Footer">
             <ul className="grid grid-cols-3 gap-x-stack-sm gap-y-32 max-md:grid-cols-2">
               {NAV_LINKS.map(({ label, href, external }) => (
-                // As in the Topbar: the external link goes last on mobile.
+                // As in the Topbar: column 3 of row 1 from md, last below.
                 <li
                   key={label}
-                  className={external ? "max-md:order-last" : undefined}
+                  className={
+                    external ? "md:col-start-3 md:row-start-1" : undefined
+                  }
                 >
                   <Link
                     href={href}
-                    className="inline-flex min-h-24 items-center gap-4 type-heading-h5 text-mint"
+                    className="inline-flex min-h-target items-center gap-4 type-heading-h5 text-mint"
                   >
                     {label}
                     {external && (

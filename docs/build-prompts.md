@@ -39,8 +39,14 @@ These prompts build the **HomeNew** and **Article** frames from Figma in an **em
 | Article text column 360–1081 (721 wide) | **400–1040 (640 wide)**, controlled by one token, `--measure` | About 65 characters per line, down from about 77. Change the token if Joey prefers 721. |
 | "← All articles" in dark text on the navy header | Uses `tile-fg` (white on dark headers) | The Figma version fails contrast. |
 | Footer "Accessability" | "Accessibility" | Typo. |
-| Bill band: the last stat ("2") in navy | All stats in `tile-fg` (ink) | Navy and ink are 1.1:1 apart, so the emphasis doesn't show. |
+| Bill band: "Bills Enacted" label in signal, like its number | The "Became law" number is signal; its **label stays ink** | Signal on paper is 3.47:1, only allowed for text ≥ 24px. The heading-h4 label is 21px at 1280, 20 at 991 and 16 at 390. |
+| Newsletter input with no border | **1px solid ink border** on the input (Submit gets the same, invisible on ink, so the two stay the same height) | White on amber is 1.85:1, so the input's edge fails WCAG 1.4.11 (a component boundary needs 3:1). Carry to Figma. |
 | Hardcoded `#0d0c2b` text in the rail | `ink` | Old palette value. |
+| Home statement "See how Congress is handling AI policy." (Display/H2) below the nav row | **Removed** (E6.7). Home's one `h1` is visually hidden (`sr-only`), reads `SITE_NAME` ("AI in Congress") and is the first child of `<main>`. The bill band heading is an `h2` in display-h2 | Joey: the statement cost a full row on every first render and said what the page already shows. The band heading names one section, not the page, so it stays an `h2`. |
+| Topbar: Home 24 bottom padding with no line; articles a 1px line | **Identical on every page:** logo + nav, the tile's 40 padding (24 ≤991), **no bottom line** (E6.7) | Plain site chrome. Joey removed the line; the Lawmakers (volt) header now meets mint with no line (1.0:1). That edge isn't a UI component, so 1.4.11 doesn't apply. |
+| Article topbar mint, above the category header | **The topbar takes the header mode** (E6.9), with a 1px `--tile-line` hairline under it on article pages only. Same layout and padding as every other page; mint elsewhere, with no line (E6.7) | Joey: mint above a colored header read as two unrelated blocks. One field, with the hairline keeping the nav reading as navigation. |
+| Article title always Display/H2 | **Display/H3 when the title runs past 3 lines at H2** (E6.9), counted in the browser at the current width (`Title.tsx`). Without JS it stays H2 | Joey's call. At ≥ 992 that's Comparing, House and Bilirakis (4 lines → 2); at 390, Comparing and Bilirakis (4 → 3). |
+| Bill band header row aligned on its first baseline | **Top-aligned** (E6.7): heading and source line both trim to their cap tops, so the caps sit on the tile's top padding | Joey's call. Below md the source line stacks under the heading. |
 
 ## A2. Color primitives
 
@@ -52,11 +58,11 @@ Name each color exactly as shown.
 | `stone` | `#EDEBE6` | |
 | `ink` | `#08080C` | |
 | `navy` | `#10133A` | |
-| `signal` | `#FF4301` | Newsletter only. Never small white text on it. |
+| `signal` | `#FF4301` | Bill tracker. Paper text on it, and signal text on paper, are both ≥ 24px computed at every width (3.47:1). |
 | `mint` | `#C2FCD3` | Site chrome and hover |
 | `blush` | `#EFCFC8` | |
 | `volt` | `#E4FA5B` | |
-| `amber` | `#FFAE3D` | Bill tracker |
+| `amber` | `#FFAE3D` | Newsletter. Never a blue link on it (3.28:1). |
 | `sand` | `#DDD6BE` | |
 | `slate` | `#5B6AA8` | |
 | `sage` | `#6F9C86` | |
@@ -64,10 +70,12 @@ Name each color exactly as shown.
 | `muted` | 72% | Opacity of `tile-fg` for secondary text (Figma `MutedAgainstLight`) |
 
 **Color means destination:**
-- **mint** is site chrome: the topbar, the footer logo and links, and the hover state.
-- **amber** is the bill tracker: the Home stats band and the "Bills in this article" rail cap.
-- **signal** is the newsletter band.
-- **ink** is the featured tile and the footer.
+- **mint** is site chrome: the topbar, the footer mark and links, and the default hover state.
+- **signal** is the bill tracker: "119th Congress" and the "Became law" number on Home (text ≥ 24px only), the "Explore the bill tracker" button at rest (E6.6), the "Bills in this article" rail cap and the /tracker header. The Home bill band itself is paper.
+- **The 24px rule (E6.8):** signal is 3.47:1 against paper, so signal text on paper and paper text on signal tiles are both large text only: ≥ 24px computed at every width (WCAG large text, 18pt). Labels on signal use `heading-h4-24` (A5). **Why paper, not ink, on signal:** WCAG 2 rates ink on signal 5.76:1 but it reads poorly (APCA Lc 43); paper is 3.47:1 under WCAG 2 but Lc 66 under APCA, so paper at ≥ 24px passes both models.
+- **amber** is the newsletter band, with ink text. No links on it (blue on amber is 3.28:1).
+- **navy** is the Home featured tile (and the Deepfakes article header).
+- **ink** is the footer and the "Explore the bill tracker" button's hover and focus (E6.6).
 - **Category colors** apply to article headers only.
 
 ## A3. Tile modes
@@ -81,6 +89,7 @@ Every colored block is a **tile** with a mode. Mode variables:
 | `--tile-fg-muted` | Secondary text color |
 | `--tile-line` | Line color |
 | `--tile-hover-bg` | Background on hover |
+| `--tile-hover-fg` | Text color on hover (unset: ink) |
 
 | Mode | bg | fg | fg-muted | line | hover-bg |
 |---|---|---|---|---|---|
@@ -92,13 +101,16 @@ Every colored block is a **tile** with a mode. Mode variables:
 | volt | volt | ink | ink 72% | ink 12% | mint |
 | sand | sand | ink | ink 72% | ink 12% | mint |
 | sage | sage | ink | **ink** (no muted: 72% is 4.3:1) | ink 20% | mint |
-| signal | signal | ink | **ink** (no muted) | ink 20% | (none) |
+| signal | signal | **paper** (E6.8; ≥ 24px only) | **paper** (no muted) | paper 20% | (none) |
 | ink | ink | paper | paper 72% | paper 20% | mint |
 | navy | navy | paper | paper 72% | paper 20% | mint |
 | slate | slate | paper | **paper** (no muted: 72% is 3.5:1) | paper 20% | mint |
 
-- **The newsletter band overrides fg to paper.** White on signal is 3.5:1, which is only allowed for text 24px and up. Every text element inside that band must be at least 24px.
-- **Hover and focus switch the whole mode,** not just the background: `bg`, `fg`, `fg-muted` and `line` all take Mint's values, and all four fade together over 300ms (0ms under reduced motion).
+- **The tracker button, signal → ink (E6.6; paper label since E6.8):** the "Explore the bill tracker" button is a signal tile (paper label and arrow, the mode's default; the label is `heading-h4-24`) with `--tile-hover-bg` set to ink and `--tile-hover-fg` to paper, so hover and focus flip it to ink with paper text (19.8:1) and a paper focus ring.
+- **The Home featured tile, navy → amber (E6.10 follow-up, Joey's call):** `--tile-hover-bg` is amber, `--tile-hover-fg` unset, so hover and focus flip it to amber with ink text (15.6:1) and ink-72% muted text (about 6.1:1), as on the newsletter band.
+- **The Home grid tiles, ink → paper (E6.10 follow-up, Joey's call):** `PostTile` is `mode="ink"` (paper title, arrow and pill; paper 72% date; 20% lines) with `--tile-hover-bg` set to paper and `--tile-hover-fg` unset, so hover and focus flip it to paper with ink text, ink 72% date, 12% lines and an ink focus ring. Every other interactive tile hovers to mint with ink.
+- **Signal tiles have paper text, and all of it is ≥ 24px (E6.8):** the button label and the rail cap use `heading-h4-24`; the /tracker header is display-h2 plus a display-h3 sentence (24 on phones). **Amber tiles keep ink text** (ink on amber is 10.8:1).
+- **Hover and focus switch the whole mode,** not just the background: `bg` takes `--tile-hover-bg` (mint; ink on the tracker button, amber on the featured tile, paper on the grid tiles) and `fg`, `fg-muted` and `line` derive from `--tile-hover-fg` (ink unless set; paper on the tracker button), and all four fade together over 300ms (0ms under reduced motion).
 - **Mint is never a category color.**
 
 ## A4. Category → article header mode
@@ -112,21 +124,24 @@ Every colored block is a **tile** with a mode. Mode variables:
 | National security | sand | ink |
 | States | sage | ink, no muted |
 
+**The article topbar takes the header mode (E6.9),** so the top of an article is one colored field: the logo, nav text, nav rules and focus rings follow the mode's fg (paper on navy and slate, ink on the rest). A 1px hairline in the mode's `--tile-line` (fg at 12%, or 20% on sage, navy and slate) runs under the topbar on article pages only. It's decorative and keeps the nav reading as navigation. Nav text (heading-h5) on the topbar: blush 13.7, navy 17.9, slate 5.2, volt 17.3, sand 13.7, sage 6.5 (all ≥ 4.5:1). Home, /tracker, /privacy and /accessibility keep the mint topbar with no line.
+
 **Pills are always neutral:** outlined, with no fill (or a fill matching the tile background), the border and text in `tile-fg`. Category color appears only on the article header.
 
 ## A5. Type
 
 Font: **Switzer Variable**, loaded locally. Letter spacing is in **em**, converted from Figma's percentages. Sizes are in **rem**, where 1rem = 16px at 1440.
 
-**Tablet step (≤ 991):** the root jumps from 14px to 16px at 991 (A6), so every style steps down there. Without the step, type would grow as the window narrows. The ≤ 991 column is in px at the 16px root. Display, h4, h5 and text-large follow Eclipse's live ≤ 991 values (h3's line height is 36, not Eclipse's 36.8, to stay under its 1024 size). The other styles hold at their 1024 size, rounded down to a whole px. Tracking (em) and weights don't change. `text-article` has an 18px floor at every width (`max(1.25rem, 18px)`), so it reads 18 between 992 and 1280 instead of 17.5. `text-small` and `ui-label` have a 13px floor the same way (`max(…, 13px)`), so they read 13 from about 1350 down instead of 12.25 (992–1280) and 12 (≤ 991). `tests/scaling.spec.ts` fails if any style or layout token grows as the width shrinks.
+**Tablet step (≤ 991):** the root jumps from 14px to 16px at 991 (A6), so every style steps down there. Without the step, type would grow as the window narrows. The ≤ 991 column is in px at the 16px root. h4, h5 and text-large follow Eclipse's live ≤ 991 values; display-h1 and h2 keep them too (60, 40). display-h3 is 32 / 36 at ≤ 991 (E6.7 restored this; E6.4 had made it 28 / 31.5). The other styles hold at their 1024 size, rounded down to a whole px. Tracking (em) and weights don't change. `text-article` has an 18px floor at every width (`max(1.25rem, 18px)`), so it reads 18 between 992 and 1280 instead of 17.5. `text-small` and `ui-label` have a 13px floor the same way (`max(…, 13px)`), so they read 13 from about 1350 down instead of 12.25 (992–1280) and 12 (≤ 991). `tests/scaling.spec.ts` fails if any style or layout token grows as the width shrinks.
 
 | Token | Size / line height | ≤ 991 | Weight | Letter spacing | Source | Used for |
 |---|---|---|---|---|---|---|
 | `display-h1` | 90 / 90 | 60 / 60 | 600 | −0.04em | Figma | Bill stat numbers |
-| `display-h2` | 66 / 66 | 40 / 40 | 600 | −0.035em | Figma | Home statement, featured title, article title, newsletter heading |
-| `display-h3` | 38 / 42 | 32 / 36 | 600 | −0.03em | Figma | Bill band heading, grid tile titles, article h2, "Sources", newsletter field and button text |
-| `heading-h4` | 24 / 31 | 20 / 26 | 600 | −0.02em | Figma | Stat labels, featured dek, article dek, rail cap, rail bill title |
-| `heading-h5` | 20 / 28 | 16 / 22.4 | 600 | −0.015em | Figma (Inter → Switzer) | Nav links, pills (uppercase), dates, source line, footer links, "Track this bill", ALL action-row labels (Joey, E5.1: same type as the nav links) |
+| `display-h2` | 66 / 66 | 40 / 40 | 600 | −0.035em | Figma | Bill band heading (E6.7), featured title, article title (display-h3 when it runs past 3 lines at h2, E6.9), newsletter heading |
+| `display-h3` | 38 / 42 | 32 / 36 | 600 | −0.03em | Figma | Grid tile titles, article h2, "Sources", newsletter field and button text |
+| `heading-h4` | 24 / 31 | 20 / 26 | 600 | −0.02em | Figma | Stat labels, featured dek, article dek, rail bill title |
+| `heading-h4-24` | 24 / 31 | 24 / 31 | 600 | −0.02em | E6.8 | Text on signal: the tracker button label, the rail cap. heading-h4 with a 24px floor (`max(…, 24px)`) at every tier, so 24 from 1440 down (33 at 2560); the line height stays 31/24 at every tier so it never grows at 991 |
+| `heading-h5` | 18 / 25.2 | 15 / 21 | 600 | −0.015em | Figma (Inter → Switzer) | Nav links, pills (uppercase), dates, source line, footer links, "Track this bill", ALL action-row labels (Joey, E5.1: same type as the nav links) |
 | `text-large` | 24 / 31 | 20 / 26 | 400 | −0.015em | Figma | "All articles" back link |
 | `text-medium` | 22 / 29 | 18 / 23.7 | 400 | −0.01em | Spec | (reserved) |
 | `text-article` | 20 / 32 | 18 / 28.8 | 400 | 0 | Figma | Article body, rail status lines, source list items |
@@ -134,6 +149,10 @@ Font: **Switzer Variable**, loaded locally. Letter spacing is in **em**, convert
 | `text-small` | 14 / 20 | 13 / 18.6 | 400 | +0.005em | Spec | Figure captions |
 | `ui-nav` | 18 / 20 | 15 / 16.7 | 500 | −0.005em | Figma | Article meta row |
 | `ui-label` | 14 / 20 | 13 / 18.6 | 500 | +0.005em | Spec | (reserved) |
+
+**Display sizes: reverted in E6.7.** Joey asked for the earlier, larger sizes back, so display-h1/h2/h3 are Figma's 90/90, 66/66 and 38/42 again (78.75, 57.75 and 33.25 at 1220), and ≤ 991 display-h3 is 32/36. The note below is history. **Was (E6.4, Joey's taste call, not Eclipse parity):** display-h1/h2/h3 went from Figma's 90/90, 66/66 and 38/42 to 72/72, 52/52 and 32/36 at 1440, so a laptop reads them the way a 2560 monitor (root capped at 1920) did. At 1220 (root 14) they're 63, 45.5 and 28. The fluid root, its breakpoints and the cap didn't change. Until the Figma styles are updated, the file shows the old sizes.
+
+**heading-h5 (E6.6, Joey's taste call):** 20/28 → 18/25.2 at 1440 (line height 1.4), ≤ 991 16 → 15, ≤ 767 14 unchanged, so the nav links sit right beside the smaller display headings. 18 is also Eclipse's nav size at 1440 (E5.1). It computes to 15.75 at 1220 (root 14), so the ≤ 991 value is 15, not 16 (no growth at the jump), and equals `ui-nav` there.
 
 **Article body (spec):**
 - Paragraph spacing 24.
@@ -154,12 +173,15 @@ Font: **Switzer Variable**, loaded locally. Letter spacing is in **em**, convert
 html { font-size: max(0.875rem, calc(-0.125rem + 1.25vw)); } /* 16px at 1440 */
 @media (max-width: 1280px) { html { font-size: 0.875rem; } }
 @media (max-width: 991px)  { html { font-size: 1rem; } }
-@media (min-width: 1920px) { html { font-size: 1.375rem; } } /* cap */
+@media (min-width: 1440px) { html { font-size: max(1rem, 0.859375vw); } } /* E6.10 */
+@media (min-width: 2560px) { html { font-size: 1.375rem; } } /* cap */
 ```
+
+**Above 1440 (E6.10, Joey's taste, not Eclipse):** the root follows 22/2560 = 0.859375vw instead of Eclipse's 1.25vw, so text is the same physical size on a 27" 1080p and a 27" 1440p monitor (16.5px at 1920 ≈ 22px at 2560 ≈ 5.1mm). Roots: 16 from 1440 to 1862, 16.5 at 1920, 17.6 at 2048, 22 from 2560. It's continuous at 1440 and 2560 and never shrinks as the window widens.
 
 Every size, space and layout token is in rem, so the whole layout scales together.
 
-The `max()` floor changes nothing at the default 16px browser font size. With a larger default, it lets the user's setting win over `vw` between 1281 and 1919 (WCAG 1.4.4). At a 20px default, the root at 1366 is 17.5px, up from 15.075.
+The `max()` floor changes nothing at the default 16px browser font size. With a larger default, it lets the user's setting win over `vw` between 1281 and 2559 (WCAG 1.4.4). The largest root (22) is 1.57× the smallest (14), so zoom up to 500% still doubles the text. At a 20px default, the root at 1366 is 17.5px, up from 15.075.
 
 ## A7. Spacing primitives and layout tokens
 
@@ -189,6 +211,8 @@ Use `@carbon/icons-react`:
 | Icon | Where | Size |
 |---|---|---|
 | `ArrowRight` | Action rows | 24 |
+| `ArrowRight` | Featured and grid tile arrows (E6.1) | 48 |
+| `ArrowRight` | "Explore the bill tracker" button (E6.1) | 32 |
 | `ArrowLeft` | "All articles" | 24 |
 | `ArrowUpRight` | External links: nav "Joey Holzman", "Track this bill", sources | 24 |
 
@@ -203,13 +227,14 @@ Icons inherit `currentColor` and are `aria-hidden`. The link text carries the me
   - one `h1` per page, and no skipped heading levels.
 - **Focus:** a visible 2px outline in `tile-fg`, inset 8px on tiles and offset 3px on inline links.
 - **Hover equals focus:** anything that changes on hover also changes on `:focus-visible` or `:focus-within`.
-- **One link per tile:** the title is the link, stretched over the tile with `::after`. "Read more" rows are `aria-hidden`.
+- **One link per tile:** the title is the link, stretched over the tile with `::after`. The tile arrows (E6.1) are `aria-hidden`.
 - **Targets:** at least 24×24px.
 - **External links:** the visible ↗ plus visually hidden text, "(external site)".
 - **Motion:** respect `prefers-reduced-motion`. Transitions are 300ms ease-out, and drop to 0ms when reduced motion is on.
 - **Sticky elements:**
   - never on screens under 768 wide or under 640 tall, or under reduced motion;
   - `:focus-within` raises the sticky element's z-index so focus is never hidden (WCAG 2.4.11).
+  - **Home is a single stage (E6.1):** only the topbar sticks (top 0, z 0, and only while it fits the viewport, via StickyFit). The bill band is `relative`, z 1, solid paper, and slides up over it; the featured band and everything after it scroll normally (`relative`, z 1) and never cover the bill band. The article rail is the only other sticky element.
 - **Images:** `alt` is required in content frontmatter, and the build fails without it.
 - **Without JavaScript,** every page and all its content render.
 - **Pre-launch:**
@@ -362,8 +387,8 @@ Build these in src/components/:
      Columns are 192 / 199 / 192 wide with layout-stack (24) between them, and layout-stack-sm (8) between the rows.
    - Each nav item: a 1px top line in tile-fg, then an 8 gap, then the label in type-heading-h5. The external item puts ArrowUpRight (24) at the far right of its 192 column.
    - Mark the current page with aria-current="page" and an underline.
-   - variant="article" adds a 1px ink 12% bottom border to the topbar, because a volt header next to mint is 1.0:1.
-   - variant="home" renders children below the nav row (for the statement in E4).
+   - variant="article" adds a 1px ink 12% bottom border to the topbar, because a volt header next to mint is 1.0:1. (E6.7: no line on any page.)
+   - variant="home" renders children below the nav row (for the statement in E4). (E6.7: removed; the topbar takes no children.)
 
 5) <Footer>: an Ink tile.
    - Left: the Logo in mint, 648 wide at 1440 (40.5rem), at the tile's top-left padding.
@@ -508,13 +533,13 @@ Read docs/build-prompts.md Part A and CLAUDE.md. If the Figma MCP server is avai
 Build src/app/page.tsx. The bands, top to bottom:
 
 1) TOPBAR (home variant), mint, total height 266 at 1440.
-   - Below the nav row, the statement: <h1> "See how Congress is handling AI policy." in type-display-h2, ink, at the tile padding.
+   - (Removed in E6.7: no statement; Home's h1 is sr-only in <main>, and the topbar matches the article one. See A1.) Below the nav row, the statement: <h1> "See how Congress is handling AI policy." in type-display-h2, ink, at the tile padding.
    - It starts 53px below the nav row (top 173 in Figma). Use layout-tile-top-md minus the trim. Get the 173 optically and tell me which tokens you used.
    - Bottom padding: layout-stack (24).
 
 2) BILL BAND: an amber Tile, about 519 tall at 1440. Data from bill-stats.json.
    - Header row, with the items aligned on their first baseline:
-     * left: <h2> "AI bills in the 119th Congress" in type-display-h3;
+     * left: <h2> "AI bills in the 119th Congress" in type-display-h3 (display-h2 and top-aligned since E6.7);
      * right: "Congress.gov, updated Oct 1, 2026" in type-heading-h5 with text-tile-muted, built from the data.
    - Stats: a 4-column grid with no dividers. Each stat's left edge sits on its quarter line plus the tile inset (40, 400, 760, 1120 at 1440), so they line up with the grid below. Each stat is a <div> with:
      * the number in type-display-h1;
@@ -541,16 +566,15 @@ Build src/app/page.tsx. The bands, top to bottom:
 
 5) <SiteEnd /> (the newsletter band, then the footer).
 
-STICKY SLIDE-OVER: a two-stage cascade (decided by Joey on Oct 2; replaces the single wrapper)
-- Stage 1: the AI bills band slides up over the topbar and statement.
-- Stage 2: the featured band and everything after it slide up over the AI bills band.
-- Each layer is sticky at top: 0, and later layers have a higher z-index:
+STICKY SLIDE-OVER: a single stage (Joey's decision in E6.1; it replaced E4's two-stage cascade)
+- Only the topbar gets covered: the AI bills band slides up over the topbar and statement (no statement since E6.7), then scrolls on.
+- The layers:
   * the Topbar (home variant only): sticky, top 0, z-index 0;
-  * the bill band: sticky, top 0, z-index 1, solid amber;
-  * the featured band and every later band: position relative, z-index 2, solid backgrounds.
+  * the bill band: position relative, z-index 1, solid amber (not sticky);
+  * the featured band and every later band: position relative, z-index 1, solid backgrounds. They scroll normally and never cover the bill band.
 - The landmarks stay as they are (header outside <main>, the bill band inside <main>). No wrapper.
-- Guards: sticky only within @media (min-width: 768px) and (min-height: 640px) and (prefers-reduced-motion: no-preference). Each layer is sticky only if its own height fits the viewport (the ResizeObserver hook, per element). Without JavaScript, nothing is sticky.
-- Focus is never hidden: :focus-within on a sticky layer raises it to z-index 3, so a focused nav link shows even while the bill band covers the topbar.
+- Guards: sticky only within @media (min-width: 768px) and (min-height: 640px) and (prefers-reduced-motion: no-preference), and only if the topbar's height fits the viewport (the ResizeObserver hook). Without JavaScript, nothing is sticky.
+- Focus is never hidden: :focus-within on the topbar raises it to z-index 3, so a focused nav link shows even while the bill band covers it.
 - Article pages: the topbar is never sticky.
 
 Verify:
@@ -603,7 +627,7 @@ Build src/app/posts/[slug]/page.tsx with generateStaticParams and generateMetada
 
 3) IMAGE: the post image straddles the edge of the header.
    - It's the full width of the measure, at an aspect ratio of 721 / 438.
-   - It overlaps the header by 104px (the header gets that much extra bottom padding, and the image a negative top margin).
+   - It overlaps the header by 104px (the header gets that much extra bottom padding, and the image a negative top margin). The paper wrapper below the header must be a block formatting context (`flow-root`), or the negative margin collapses through it and the wrapper's paper background covers the overlap.
    - Use a <figure>. When there's a credit, add a <figcaption> in type-text-small with text-tile-muted, 12 below the image.
 
 4) EDITOR'S NOTES (only when present; not in Figma yet, so follow the spec):
@@ -743,7 +767,7 @@ Read docs/build-prompts.md Part A and CLAUDE.md. Joey will refine mobile in Figm
    - Topbar:
      * the logo on its own row;
      * the nav becomes a 2-column grid below it (Articles, Privacy Policy / Bill Tracker, Accessibility / Joey Holzman ↗), with the lines above each item kept;
-     * the statement follows, 32 below.
+     * the statement follows, 32 below (removed in E6.7).
    - Bill band:
      * the header stacks, with the source line under the heading;
      * the stats become a 2 × 2 grid with 32 between rows;
@@ -791,12 +815,436 @@ Verify:
 List anything that looked wrong but that you left alone because it's a design call. Stop and report. Tick E6 in CLAUDE.md, then append the E6 handoff entry to docs/progress.md (CLAUDE.md, "Handoff log").
 ```
 
-## E7: QA pass
+## E6.1: New buttons, single-stage scroll, nav focus order (Figma frame HomeNewWithNewButtons `2089:10`)
 
 ```
 FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
 1) Read CLAUDE.md in full, including section 0 "Sessions start cold".
 2) Read docs/progress.md (the handoff log). If E6 isn't ticked under Progress in CLAUDE.md, stop and tell me.
+3) Run git status and list src/ and content/ so you know what already exists. Reuse existing components and tokens; never recreate them.
+
+Read docs/build-prompts.md Part A. If the Figma MCP server is available, screenshot node 2089:10 in file 9DKYbMDVJ43Kt1IDcf0XJS (HomeNewWithNewButtons) and its bill band 2089:138 as the visual target at 1440.
+
+Ignore these things in that frame (they're out of date or placeholder):
+- the nav position and widths (keep E5.1's right-half nav);
+- "Accessability";
+- the newsletter with no label (keep ours);
+- the stat labels, "Bills Enacted" and the navy "2";
+- the lowercase "congress".
+
+1) BILL BAND (2089:138; 456 tall at 1440). It replaces E5.1's layout. DOM order = visual order: heading, source line, stats, button.
+   - Header row: the <h2> on the left. The source line "Congress.gov, updated <date>" (type-heading-h5, text-tile-muted) moves back to the TOP RIGHT, right-aligned to the inset, aligned to the heading's first baseline. Remove the E5.1 ActionRow from the header row.
+   - Stats: unchanged (the <dl> on the quarter lines), layout-tile-md below the header row.
+   - "Explore the bill tracker" (sentence case, per our UI convention) → /tracker:
+     * a solid INK block docked to the band's BOTTOM-RIGHT: it spans the right half exactly (from the 50% line to the viewport's right edge, full bleed, no inset) and sits flush on the band's bottom edge. The left half of that row stays amber.
+     * It's a Tile mode="ink" with data-interactive, padding layout-tile-pad (40), so it's 112 tall at 1440. The whole block is one <a>: the label in type-heading-h4, paper, on the left, and Carbon ArrowRight (32, aria-hidden) on the right inset.
+     * Hover and focus flip it to mint with ink text and arrow (the existing 300ms fade, 0 under reduced motion). The focus ring is inset like the other tiles.
+     * Below 768: full width, after the stats, with an 8px amber strip under it (E6.2) so it never sits directly on the ink featured tile.
+   - The stats → button gap comes from layout tokens; match Figma's 456 band height at 1440 as closely as the tokens allow, and report the difference.
+
+2) SCROLL: SINGLE STAGE (Joey's decision; it replaces the two-stage cascade).
+   - Only the topbar gets covered: the Home topbar stays sticky at top 0, z 0 (same guards: ≥768 wide, ≥640 tall, no reduced motion, fits the viewport, JS on).
+   - The bill band is no longer sticky. It's position relative, z 1, with its solid amber background, so it slides up over the topbar. The featured band and everything after it scroll normally (relative, z 1, solid backgrounds) and never cover the bill band.
+   - Keep focus-within:z-3 on the topbar, so a focused nav link is never hidden. Remove data-sticky and StickyFit from the bill band. Keep StickyFit if the topbar or the article rail still uses it.
+   - Update tests/home.spec.ts:
+     * remove the stage-2 cascade assertions ("ink covers the source and stats first, the tracker row last");
+     * keep "the amber band covers the topbar" and the covered-nav focus test;
+     * add "the featured band never overlaps the bill band".
+   - Update Part A (A9) and the E4 sticky section in this file to describe the single stage.
+
+3) TILE ARROWS replace the "Read more" rows (the Figma frame):
+   - Featured tile: remove the decorative ActionRow. The dek and a Carbon ArrowRight (48, aria-hidden, currentColor) share the bottom row: the dek on the left, the arrow on the right inset, both bottom-aligned (Figma 2089:48: flex, justify-between, items-end).
+   - Grid tiles (PostTile): remove the decorative ActionRow. A Carbon ArrowRight (48, aria-hidden, currentColor) is pinned to the bottom LEFT (mt-auto).
+   - Joey chose these two different positions on purpose (Eclipse does the same). Keep them.
+   - The title stays the only link (link-stretched). Hover and focus still flip the whole tile to mint, and the arrow follows via currentColor.
+   - Keep the ActionRow component only if something still uses it (the article rail's "Track this bill"). Delete it if nothing does.
+
+4) FOOTER MARK: the footer shows the mint quarter-circle mark (AIInCongressIcon, 321 × 334 at 1440) instead of the wordmark.
+   - Make it a <Mark> component next to <Logo> in src/assets/brand/: the same SVG as src/app/icon.svg, with its fill replaced by currentColor. It's decorative (aria-hidden), since the footer's disclaimer names the site.
+   - Its width is a token (--mark-footer: 321 at 1440) with a ≤991 value no larger than its 992 value. Use Figma's position (28, 30) only if it lands on tokens; otherwise use the tile inset (40) and say so.
+   - Delete --logo-footer if nothing else uses it.
+
+5) NAV FOCUS ORDER (WCAG 2.4.3): on mobile, "Joey Holzman ↗" shows last but is reached third with Tab (E6 used CSS order). Fix the DOM order in both Topbar and Footer: Articles, Privacy Policy, Bill Tracker, Accessibility, Joey Holzman ↗.
+   - On desktop, put Joey Holzman ↗ back in column 3, row 1 with grid placement, so the desktop look doesn't change.
+   - Remove the `order` rules.
+   - Update the tab-order expectations in tests/home.spec.ts and tests/shell.spec.ts.
+
+6) HOLD AT 991: --disclaimer (490 → 560), the topbar row's min-h-80 (70 → 80), --mark-footer and the new button's height. Give each a ≤991 value no larger than its 992 value, and add them all to tests/scaling.spec.ts.
+
+VERIFY:
+- lint, build and the full test:e2e suite;
+- axe on / at 1440, 1024, 768 and 390, and on one article;
+- the keyboard walk on Home: skip → logo → nav (new DOM order) → "Explore the bill tracker" → featured → grid → email → Submit → footer (new order). Every stop is visible and uncovered;
+- hover and focus on the ink button flip it to mint;
+- screenshots in screens/e6.1/: home-{1440,1366,1024,768,390}, scroll frames at 1440 showing the amber band over the topbar and the featured band NOT covering the amber band, and the footer at 1440 and 390;
+- the Figma comparison against 2089:10.
+
+Add "E6.1: new buttons, single-stage scroll, nav focus order, 991 holds" under Progress in CLAUDE.md, tick it, and append the handoff entry.
+```
+
+## E6.2: Article image overlap + amber divider under the tracker button on phones
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0 "Sessions start cold".
+2) Read docs/progress.md (the handoff log). If E6.1 isn't ticked under Progress in CLAUDE.md, stop and tell me.
+3) Run git status and list src/ and content/ so you know what already exists. Reuse existing components and tokens; never recreate them.
+
+If the Figma MCP server is available, screenshot node 2075:1532 in file 9DKYbMDVJ43Kt1IDcf0XJS (Article) as the visual target. In it, the image's top 104px sit ON the category-colored header: the header color shows on both sides of the image's top edge.
+
+THE BUG: on /posts/[slug] the image looks like it starts exactly where the header ends. The rects say it overlaps by 104 (that's why E5's check passed), but nothing of the header shows beside it.
+- Cause: in src/app/posts/[slug]/page.tsx, the image's `-mt-image-overlap` sits on a child of `<div data-tile="paper" className="pb-tile-lg">`. That wrapper has no top padding or border, so the negative margin collapses through it. The wrapper itself moves up 104px, and since it comes later in the DOM, its paper background paints over the bottom 104px of the header.
+- Confirm it before you fix it: at 1440, the paper wrapper's getBoundingClientRect().top equals the image's top, not the header's bottom.
+
+1) FIX (one class): add `flow-root` to that paper wrapper (`flow-root pb-tile-lg`). It becomes a block formatting context, so the margin no longer collapses: the wrapper starts at the header's bottom edge, and the image overflows 104px up over the header. Don't move the margin, add z-index, or restructure. The image's `relative` container already paints above the header's background.
+   - Check that the figcaption, the editor-notes tile (`mt-article-gap`) and the body below don't shift. The gap from the image's bottom to the next block must be unchanged.
+   - Check /privacy and /accessibility don't use the same pattern. If they do, report it; don't change them.
+
+2) TEST: add to the article spec (tests/article.spec.ts, or wherever E5 put the overlap check):
+   - "the header color shows beside the image's top edge": at 1440, 991 and 390, on one post per header mode (blush, navy, slate, volt, sand, sage), take `document.elementFromPoint(img.left - 8, img.top + 8)`. Its `closest('[data-tile]')` must be the header tile, not the paper wrapper.
+   - Also check that the paper wrapper's top equals the header's bottom (±1).
+   - Keep the existing overlap check: 104 at 1440, 91 at 991 and 56 at 390.
+
+3) HOME, BELOW 768: AMBER DIVIDER BETWEEN THE TRACKER BUTTON AND THE FEATURED TILE (Joey's decision).
+   - The bug: below md the ink "Explore the bill tracker" block sits flush on the band's bottom, directly on top of the ink featured tile. The two merge into one black block, and the button reads as the featured article's kicker.
+   - The fix: below md only, the amber bill band gets a strip of its own color under the button. In src/app/page.tsx, change the band's `pb-0` to `pb-0 max-md:pb-8` (--spacing-8). It's the band's padding, not a border on the featured tile, so the divider belongs to the bill band and amber keeps meaning "bill tracker".
+   - From md up, nothing changes: the button stays flush on the band's bottom (at md+ it sits over the featured image, not the ink text).
+   - Test (tests/home.spec.ts): at 390, the featured band's top minus the button's bottom is 8 (±1), and `elementFromPoint` in that gap resolves to the amber band. At 768 and 1440, the gap is 0.
+   - Update the E6.1 bill-band note in this file ("Below 768: full width, flush to the band's bottom") to say there's an 8px amber strip under it below 768.
+
+VERIFY:
+- lint, build and the full test:e2e suite;
+- axe on two articles (one dark header, e.g. navy; one light, e.g. volt) at 1440 and 390;
+- screenshots in screens/e6.2/: one article at 1440, 991, 768 and 390, cropped or scrolled so the header/image seam is visible; Home at 390 and 768 showing the button and the featured tile;
+- the Figma comparison: the image straddles the header edge as it does in 2075:1532.
+
+Add "E6.2: article image overlap, amber divider under the tracker button" under Progress in CLAUDE.md, tick it, and append the handoff entry.
+```
+
+## E6.3: Color remap (Figma HomeNewWithNewButtons `2089:10`, Oct 3)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0 "Sessions start cold".
+2) Read docs/progress.md (the handoff log). If E6.2 isn't ticked under Progress in CLAUDE.md, stop and tell me.
+3) Run git status and list src/ and content/ so you know what already exists. Reuse existing components and tokens; never recreate them.
+
+If the Figma MCP server is available, screenshot node 2089:10 in file 9DKYbMDVJ43Kt1IDcf0XJS as the visual target. Ignore its placeholder copy, the photo, "Accessability", and the stat label wording.
+
+Joey changed what the colors mean. The new mapping (it replaces CLAUDE.md section 4 "Color means destination" and Part A A2/A3):
+- signal (orange) = the bill tracker;
+- amber = the newsletter;
+- navy = the Home featured tile (and still the Deepfakes article header);
+- ink = the footer and the "Explore the bill tracker" button;
+- mint = site chrome and the default hover.
+No modes or tokens are added: this is which existing mode each block uses. No raw hex.
+
+1) HOME BILL BAND: amber → PAPER.
+   - The band is a paper Tile (still relative z-1 and sliding over the topbar). The source line keeps text-tile-muted.
+   - "119th Congress" in the heading is signal text: wrap that part of the string in a <span className="text-signal">. Build the heading from stats.congress as now; no hardcoded copy.
+   - The "Became law" NUMBER is signal text. Its LABEL stays ink (deviation from Figma: signal on paper is 3.47:1, which is only allowed for text ≥ 24px, and the heading-h4 label is 21px at 1280, 20 at 991 and 16 at 390). Add this to A1.
+   - Rule for A2: signal is never text below 24px computed, at any width.
+
+2) "EXPLORE THE BILL TRACKER" BUTTON: stays ink. Hover AND focus-within flip it to SIGNAL, with the label and arrow flipping to ink (ink on signal is 5.76:1; white on signal would fail at this size).
+   - Use the existing mechanism: set --tile-hover-bg to the signal color on that one Tile (an arbitrary property class, or a data attribute rule in globals.css; pick whichever is one line). The shared hover rule already sets fg to ink and the 300ms fade (0 under reduced motion) applies.
+   - Every other interactive tile still flips to mint.
+   - The phone divider from E6.2 (pb-8 under the button below md) stays: it's now a paper strip, which still separates the ink button from the navy featured tile (ink vs navy is 1.12:1). Update the comment that says "amber strip".
+
+3) HOME FEATURED TILE: ink → NAVY. Hover and focus still flip it to mint. The pill, date (muted 72% on navy is 9.6:1) and arrow follow tile-fg.
+
+4) NEWSLETTER BAND: signal → AMBER, with ink text.
+   - Remove the paper fg override and the "every text element ≥ 24px" comment (ink on amber is 10.8:1); keep the current type sizes so nothing visually shifts except color.
+   - The input is white on amber, 1.85:1: its edge fails WCAG 1.4.11 (a component's boundary needs 3:1). Give the input a 1px solid ink border. Figma has none; add it to A1 so Joey carries it to Figma. The 2px focus outline is unchanged.
+   - Never put a blue link on amber (3.28:1). Note that in A2.
+   - Submit stays ink, hover mint.
+
+5) TRACKER EVERYWHERE ELSE = SIGNAL:
+   - The article rail cap "Bills in this article" (Rail.tsx): amber → signal (ink text, 5.76:1).
+   - The /tracker stub's header Tile: amber → signal. Its type-text-large line is ink, so it passes at any size.
+
+6) DOCS: update CLAUDE.md section 4 (the mapping above and "no muted text on Signal" stays), Part A A1 (replace the "'2' in navy" row with the label-stays-ink row; add the input border row), A2 (signal and amber roles, the 24px rule, no links on amber), A3 (signal's hover-bg note), and A9's single-stage note ("solid amber" → "solid paper"). Log nothing in token-log.md unless a token value changes.
+
+TESTS:
+- home.spec: at 1440, 991 and 390, every element whose computed color is signal has a computed font-size ≥ 24px.
+- home.spec: hover the tracker button → its background computes to signal and the label to ink; same on keyboard focus. The featured tile still hovers to mint.
+- home.spec: the band covers the topbar (existing test; update any amber color assertion to paper). The 390 gap under the button is still 8 and now resolves to the paper band.
+- newsletter (wherever its test lives): the band is amber, the input has a 1px ink border.
+- article spec: the rail cap is signal.
+
+VERIFY:
+- lint, build and the full test:e2e suite;
+- axe on /, /tracker and one article at 1440 and 390;
+- the keyboard walk on Home: the tracker button's focus state is signal and clearly visible;
+- screenshots in screens/e6.3/: home-{1440,1024,768,390}, the tracker button hovered and focused at 1440, the newsletter band at 1440 and 390, one article's rail at 1440;
+- the Figma comparison against 2089:10; list the two deliberate deviations (ink "Became law" label, input border).
+
+Add "E6.3: color remap (tracker = signal, newsletter = amber, featured = navy)" under Progress in CLAUDE.md, tick it, and append the handoff entry.
+```
+
+## E6.4: Smaller display headings (Oct 3)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0 "Sessions start cold".
+2) Read docs/progress.md (the handoff log). If E6.3 isn't ticked under Progress in CLAUDE.md, stop and tell me.
+3) Run git status and list src/ and content/ so you know what already exists. Reuse existing components and tokens; never recreate them.
+
+WHY: at Figma's 1440 proportions (what laptops and a 1220 window show), the display headings read too big. On Joey's 2560 monitor the 1920 root cap shrinks them about 25% and that's the look he wants. Fix the type scale, not the scaling: the fluid root, its breakpoints and the 1920 cap stay exactly as they are. Body text, heading-h4/h5 and every text-* style are unchanged.
+
+1) In src/app/globals.css, change only these three utilities (values are Figma px at 1440; rem = px / 16):
+
+   | Style | Now (1440) | New (1440) | ≤991 | ≤767 |
+   |---|---|---|---|---|
+   | type-display-h1 | 90/90 (5.625rem) | 72/72 (4.5rem) | 60 (unchanged) | 40 (unchanged) |
+   | type-display-h2 | 66/66 (4.125rem) | 52/52 (3.25rem) | 40 (unchanged) | 34 (unchanged) |
+   | type-display-h3 | 38/42 (2.375rem) | 32/36 (2rem, line-height 36/32) | 32/36 → 28/32 (1.75rem) | 24 (unchanged) |
+
+   - Letter spacing stays in em (unchanged), line heights stay unitless.
+   - Why h3 changes at ≤991: at 992 the root is 14, so the new h3 computes to 28. The ≤991 value must not be larger, or the no-growth test fails.
+   - Expected at 1220 (root 14): h1 63, h2 45.5, h3 28.
+2) Check what was tuned to the old sizes. Re-measure at 1440 and report before → after:
+   - the topbar height and the statement offset (--statement-top is computed from type, so it should follow by itself);
+   - the Home bill band height (Figma 456), the featured band (--band-featured, a min-height of 807), the grid tiles (--post-tile, a min-height of 354);
+   - the article header height.
+   Don't change the min-height tokens. Report the new empty space so Joey can decide in Figma.
+3) Constraints to re-check:
+   - signal text ≥ 24px at every width (the "119th Congress" span is display-h3: 28 at 1280, 24 at 390);
+   - the scaling test (no growth as the width shrinks) passes;
+   - nothing wraps worse: the longest real post title in the featured tile and on an article header at 1440, 1024 and 390.
+4) DOCS: update Part A A5 (the type table and the ≤991 h3 value), the /styleguide page if it hard-codes sizes, and docs/token-log.md with one "carry to Figma" line per style: Display/H1 90/90 → 72/72, Display/H2 66/66 → 52/52, Display/H3 38/42 → 32/36. Note there that this is a taste decision, not Eclipse parity (Eclipse's comparable heading is 66 at 1440).
+
+TESTS: update the expected values in tests/scaling.spec.ts. Add an assertion at 1440 that display-h1/h2/h3 compute to 72/52/32, and at 1220 to 63/45.5/28.
+
+VERIFY:
+- lint, build and the full test:e2e suite;
+- axe on / and one article at 1440 and 390;
+- screenshots in screens/e6.4/: home and one article at 2560, 1440, 1220, 1024 and 390;
+- the before → after measurements from step 2 in the handoff entry.
+
+Add "E6.4: smaller display headings (72/52/32 at 1440)" under Progress in CLAUDE.md, tick it, and append the handoff entry.
+```
+
+## E6.5: The featured band is never taller than the viewport (Oct 3)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0 "Sessions start cold".
+2) Read docs/progress.md (the handoff log). If E6.4 isn't ticked under Progress in CLAUDE.md, stop and tell me.
+3) Run git status and list src/ and content/ so you know what already exists. Reuse existing components and tokens; never recreate them.
+
+E6.4 measured the featured band at 807 (its min-height) with about 400px of empty navy between the title and the dek row at 1440. This prompt fixes the height; nothing else changes.
+
+   - The bug: the featured band's height is only its min-height token (--band-featured: 807 at 1440, which scales with the root to 706 at 1220 and 1109 from 1920). Its content needs about 380 at 1220. The tile is justify-between, so on common windows (1440×790, 1536×730, 1920×950) the title is at the top of the screen and the dek and arrow are below the fold, separated by empty navy.
+   - The fix: cap the token at the small viewport height, both values: --band-featured: min(50.4375rem, 100svh) and, at ≤991, min(44rem, 100svh). It stays a MIN-height, so long titles, 400% zoom and text-spacing overrides still grow the band (no clipping). Below md it doesn't apply.
+   - The image cell is fill + object-cover, so it follows the row height; check the crop still looks intentional at 1440×790.
+   - Test (home.spec): at 1440×790, 1536×730, 1920×950 and 2560×1305, the featured band's height ≤ innerHeight (+1), and its title, dek and arrow are all inside one viewport when the band's top is scrolled to the top of the window. At 2560×1305 the height is still 1109 (unchanged: it fits).
+   - Log it in token-log.md as "carry to Figma: the featured band is at most one screen tall".
+
+VERIFY:
+- lint, build and the full test:e2e suite; axe on / at 1440 and 390;
+- screenshots in screens/e6.5/: home scrolled so the featured band's top is at the window top, at 1440×790, 1536×730, 1920×950 and 2560×1305;
+- report the band height and the title-to-dek gap at each of those sizes.
+
+Add "E6.5: featured band ≤ viewport" under Progress in CLAUDE.md, tick it, and append the handoff entry.
+```
+
+## E6.6: Smaller heading-h5 (nav links and everything that shares them) + signal tracker button (Oct 3)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0 "Sessions start cold".
+2) Read docs/progress.md (the handoff log). If E6.5 isn't ticked under Progress in CLAUDE.md, stop and tell me.
+3) Run git status and list src/ and content/ so you know what already exists. Reuse existing components and tokens; never recreate them.
+
+WHY: E6.4 shrank the display headings; the nav links now read too big beside them. The nav uses type-heading-h5, and by Joey's rule (E5.1) every nav-style label shares it, so the token changes, not the nav.
+
+1) In src/app/globals.css, change only type-heading-h5:
+
+   | | Now | New |
+   |---|---|---|
+   | 1440 | 20/28 (1.25rem) | 18/25.2 (1.125rem; line height stays 1.4) |
+   | ≤991 | 16 (1rem) | 15 (0.9375rem) |
+   | ≤767 | 14 | 14 (unchanged) |
+
+   - Expected: 18 at 1440, 15.75 at 1220, 24.75 at 2560 (root cap 22), 15 at ≤991, 14 at ≤767.
+   - Why 15 at ≤991: at 992 the root is 14, so 18 computes to 15.75; the ≤991 value must not be larger (no-growth test). 15 also equals type-ui-nav's ≤991 value.
+   - 18 is Eclipse's own nav size at 1440 (E5.1 measured it), so this is a cut of 10%, not E6.4's 20%: h5 is UI text, and at 16 it would equal body text and drop pills and dates to 14 at laptop widths.
+   - Weight, tracking and font are unchanged.
+2) Everything that uses type-heading-h5 shrinks with it. Check each at 1440 and 390 and list it in the report: Topbar nav, Footer nav, ActionRow labels, Pill, PostMeta, the Home source line, the article editor-note labels, the skip link (layout.tsx), and the accessibility and privacy pages.
+3) Re-check:
+   - nav and footer links stay ≥ 24px tall (WCAG 2.5.8): line box + pt-stack-sm;
+   - pills keep their height and padding from layout tokens, and their text stays vertically centred;
+   - the topbar row (--topbar-row, 80) still holds the logo and two nav rows; report the topbar height before → after;
+   - "Joey Holzman ↗" wrapping between 768 and ~900 (an open E6.2 item): report whether it improves;
+   - the scaling test passes.
+4) DOCS: Part A A5 (heading-h5 row) and docs/token-log.md, one "carry to Figma" line: Heading/H5 20/28 → 18/25.2 (Tablet 16 → 15), a taste decision that also matches Eclipse's nav at 1440.
+
+5) "EXPLORE THE BILL TRACKER" BUTTON: signal at rest, ink on hover (Joey's decision; replaces E6.3's ink → signal).
+   - At rest: mode="signal" (signal bg, INK label and arrow: 5.76:1). Joey asked for paper text; it fails: paper on signal is 3.47:1, which only passes for text ≥ 24px, and the heading-h4 label is 21 at 1280, 20 at ≤991 and 16 at 390 (CLAUDE.md: no small white text on signal). Don't use paper.
+   - Hover AND focus-within: ink bg, PAPER label and arrow (19.8:1), the shared 300ms fade (0 under reduced motion).
+   - The shared hover rule hard-codes fg to ink. Add one variable: in [data-tile][data-interactive]:is(:hover,:focus-within) use --tile-fg: var(--tile-hover-fg, var(--color-ink)) (and the muted/line mixes from the same value), then set [--tile-hover-bg:var(--color-ink)] [--tile-hover-fg:var(--color-paper)] on this one Tile. Every other tile is unchanged (the fallback is ink).
+   - The focus ring reads --tile-fg, so on focus it's paper on ink: check it's visible (2px, inset as now).
+   - Phones: the paper strip under the button (pb-8) stays. At rest signal vs navy is distinct (5.15:1), but the focused/pressed state is ink next to the navy featured tile (1.12:1).
+   - Update the E6.3 tests: at rest bg signal + label ink; hover and keyboard focus bg ink + label paper. Update CLAUDE.md §4 and Part A A3 (the tracker button: signal → ink on hover) and note it in token-log.md as "carry to Figma".
+
+TESTS: tests/scaling.spec.ts asserts heading-h5 computes to 18 at 1440, 15.75 at 1220 and 15 at 991. home.spec covers step 5.
+
+VERIFY:
+- lint, build and the full test:e2e suite; axe on / and one article at 1440 and 390;
+- the keyboard walk on Home (every nav stop visible, uncovered);
+- screenshots in screens/e6.6/: the topbar and footer at 2560, 1440, 1220, 1024 and 390; one article header at 1440; the tracker button at rest, hovered and focused at 1440, and at rest at 390.
+
+Add "E6.6: heading-h5 18/25.2 (nav links), signal tracker button" under Progress in CLAUDE.md, tick it, and append the handoff entry.
+```
+
+## E6.7: Drop the Home statement; the bill band heading takes the large type (Oct 3)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0 "Sessions start cold".
+2) Read docs/progress.md (the handoff log). If E6.6 isn't ticked under Progress in CLAUDE.md, stop and tell me.
+3) Run git status and list src/ and content/ so you know what already exists. Reuse existing components and tokens; never recreate them.
+
+WHY (Joey's decision): the visible statement "See how Congress is handling AI policy." costs a full row of vertical space on every first render and says what the page already shows. Removing it also makes the mint topbar read as plain site chrome: logo + nav, identical on every page.
+
+1) REMOVE THE VISIBLE STATEMENT. In src/app/page.tsx delete the <h1> passed into <Topbar variant="home">.
+   - Home still needs exactly one h1 (CLAUDE.md §5). Make it visually hidden: <h1 className="sr-only">AI in Congress</h1>, as the first child of <main>. Take the text from the same place layout.tsx's metadata title uses; if it's a string literal there, export one SITE_NAME constant from src/lib/site.ts and use it in both (no duplicated copy).
+   - Why hidden and not the band heading: the band heading names one section, not the page. The bill band heading stays an <h2>; heading level and visual size are independent.
+2) TOPBAR: identical on every page. Delete the children slot and its comment (nothing else passes children). Home and article topbars get the same padding and the same bottom line (border-b border-tile-line). `variant` stays only to switch data-sticky on Home. If the article variant then has no other difference, keep the prop name as is (no rename).
+   - Delete --statement-top from globals.css if nothing else uses it.
+3) BILL BAND HEADING: type-display-h3 → type-display-h2 (52 at 1440, 45.5 at 1220, 40 at ≤991, 34 at ≤767). Keep the signal span on "{congress} Congress" (≥ 24px at every width, so the signal rule still holds; the test from E6.3 covers it).
+   - The source line stays top-right on the heading's first baseline (md:items-baseline); at narrow desktop widths it may wrap below the heading: that's fine, check it doesn't collide.
+   - Trim the heading's top (text-box trim-start cap alphabetic, as the statement had) so its cap top sits on the tile's top padding.
+   - Labels stay ink under the signal "Became law" number (A1); ignore the signal label in Joey's screenshot.
+4) Re-measure at 1440, 1220, 1024 and 390 and report before → after: topbar height, bill band height, the y of the featured band's top (how much moved up into the first screen).
+5) TESTS: update anything that targeted the statement (home h1 text, the statement's offset/trim tests, keyboard walk). Add: Home has exactly one h1, it's visually hidden and reads "AI in Congress"; the topbar's height on / equals its height on an article (±1) at 1440 and 390.
+6) DOCS: Part A (A1: the statement is removed on purpose; the Home h1 is sr-only), the E4 section's statement notes, CLAUDE.md if it mentions the statement. token-log.md: "carry to Figma: no statement row; the bill heading is Display/H2".
+
+VERIFY:
+- lint, build and the full test:e2e suite; axe on / at 1440 and 390;
+- the keyboard walk on Home (skip link → logo → nav → tracker button → …), every stop visible;
+- screenshots in screens/e6.7/: home at 2560, 1440, 1220, 1024, 768 and 390 (first screen, not full page), and one article topbar at 1440 for comparison.
+
+Add "E6.7: no Home statement, bill heading display-h2" under Progress in CLAUDE.md, tick it, and append the handoff entry.
+```
+
+## E6.8: White text on signal, never below 24px (Oct 3)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0 "Sessions start cold".
+2) Read docs/progress.md (the handoff log). If E6.7 isn't ticked under Progress in CLAUDE.md, stop and tell me.
+3) Run git status and list src/ and content/ so you know what already exists. Reuse existing components and tokens; never recreate them.
+
+WHY: ink on signal passes WCAG 2.2 AA by the numbers (5.76:1) but reads poorly: its APCA contrast is only Lc 43, because WCAG 2's formula overrates dark text on saturated orange. Paper on signal is the reverse: 3.47:1 under WCAG 2 (large text only) but Lc 66 under APCA, i.e. it reads clearly. So signal tiles switch to PAPER text, and every piece of text on signal must be ≥ 24px computed at every width (WCAG large text = 18pt = 24px), which passes both models. CLAUDE.md §5 ("no small white text on signal") stays true.
+
+1) In globals.css, [data-tile="signal"]: --tile-fg → var(--color-paper) (muted stays = fg; line stays 20% of fg).
+2) Add ONE utility for labels that must stay large: type-heading-h4-24, identical to type-heading-h4 but with font-size max(<its size>, 24px) at every breakpoint (the same max() pattern as type-ui-label's 13px floor). Computed: 24 at 1440/1280/991/390, 33 at 2560. Line height keeps h4's ratio. It never grows as the width shrinks (constant 24 from 1440 down), so the scaling test holds; add it to the test table.
+3) Apply it:
+   - Home "Explore the bill tracker" button: label → type-heading-h4-24. At rest: signal with paper label and arrow (E6.6's ink → paper text is now just the mode's default). Hover and focus-within: ink with paper (unchanged from E6.6). The focus ring is paper on ink.
+   - Rail cap "Bills in this article": heading → type-heading-h4-24, paper on signal.
+   - /tracker stub header: the h1 (display-h2) is fine; the sentence (type-text-large, 18 on phones) → type-display-h3 (24 on phones). Keep it one sentence.
+4) TESTS: widen E6.3's "signal text is never under 24px" to also cover every text node INSIDE [data-tile="signal"] (computed font-size ≥ 24 at 1440, 1280, 991 and 390) on /, /tracker and one article. Update the button tests: at rest bg signal + label paper; hover/focus bg ink + label paper. axe must stay at 0 (it counts 24px as large text, so 3.47:1 passes).
+5) DOCS: CLAUDE.md §4/§5 (signal tiles: paper text, ≥ 24px only), Part A A2/A3 (the signal mode row: fg paper; the 24px rule; why: one line on WCAG 2 vs APCA), token-log.md "carry to Figma: text on signal is paper and ≥ 24px; Heading/H4 has a 24px floor on signal".
+
+VERIFY:
+- lint, build and the full test:e2e suite; axe on /, /tracker and one article at 1440, 1280 and 390;
+- screenshots in screens/e6.8/: the tracker button at rest, hovered and focused at 1440 and at rest at 1280 and 390; the rail cap at 1440 and 390; /tracker at 1440 and 390.
+
+Add "E6.8: paper text on signal, ≥ 24px" under Progress in CLAUDE.md, tick it, and append the handoff entry.
+```
+
+## E6.9: Article topbar takes the category header color (Oct 3)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0 "Sessions start cold".
+2) Read docs/progress.md (the handoff log). If E6.8 isn't ticked under Progress in CLAUDE.md, stop and tell me.
+3) Run git status and list src/ and content/ so you know what already exists. Reuse existing components and tokens; never recreate them.
+
+WHY (Joey's decision): on article pages, the mint topbar above a colored header reads as two unrelated blocks. The topbar takes the header's color so the top of an article is one colored field.
+
+1) Topbar gets an optional `mode` prop (TileMode, default "mint"). src/app/posts/[slug]/page.tsx passes CATEGORIES[post.category].headerMode. Home, /tracker, /privacy and /accessibility keep mint (no change at their call sites).
+2) The logo and nav already follow the tile: <Logo> paints with currentColor and the links use text-tile / border-tile-fg, so dark modes (navy, slate) give a paper logo and paper links with no new asset. Do NOT add AIinCongressLogoWhite.svg or any second logo file (one Logo, recolored by the mode). If you find a hard-coded ink anywhere in the topbar, replace it with the tile variable.
+3) A hairline between the topbar and the header: border-b border-tile-line on the article topbar (the mode's fg at 12% or 20%). It's decorative (no contrast requirement); its job is to keep the nav reading as navigation inside one colored field.
+4) Contrast, measured (nav text is heading-h5, so it needs 4.5:1): blush 13.7, navy 17.9, slate 5.2, volt 17.3, sand 13.7, sage 6.5. All pass. The focus ring reads --tile-fg, so it's paper on navy/slate and ink on the rest: check it's visible on all six.
+5) TESTS (article.spec): for one post per header mode (blush, navy, slate, volt, sand, sage): the topbar's computed background equals the header's; the logo's computed color and every nav link's color equal the tile fg; axe 0. Home's topbar is still mint.
+6) DOCS: CLAUDE.md §4 ("mint is site chrome" → "mint is site chrome, except on article pages, where the topbar takes the category header color"), Part A A4 (the topbar row) and token-log.md "carry to Figma: the Article topbar uses the header's color, with a hairline in the fg at 12%/20%".
+
+VERIFY:
+- lint, build and the full test:e2e suite; axe on all six articles at 1440 and 390;
+- the keyboard walk on one dark (navy) and one light (volt) article: every nav stop's ring is visible;
+- screenshots in screens/e6.9/: the top of one article per header mode at 1440, and navy + volt at 390.
+
+Add "E6.9: article topbar in the header color" under Progress in CLAUDE.md, tick it, and append the handoff entry.
+```
+
+## E6.10: Fluid root above 1440 tuned for large monitors (Oct 3)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0 "Sessions start cold".
+2) Read docs/progress.md (the handoff log). If E6.9 isn't ticked under Progress in CLAUDE.md, stop and tell me.
+3) Run git status and list src/ and content/ so you know what already exists. Reuse existing components and tokens; never recreate them.
+
+WHY (Joey's decision, measured): Joey's two monitors are both 27". On the 2560×1440 one at 100% the site looks right (root 22). On the 1920×1080 one it only looks right at 75% browser zoom, which renders a 2560-wide layout (root 22) at 0.75 → 16.5 device px. Both are the same physical size (22 × 0.233mm ≈ 16.5 × 0.311mm ≈ 5.1mm). So above 1440 the root should follow 22/2560 = 0.859375vw instead of Eclipse's steeper 1.25vw slope, and never drop below 16. Nothing at or below 1440 changes (the Figma frame stays exact).
+
+1) In globals.css, the fluid root (A6). Keep the base rule and the ≤1280 and ≤991 rules exactly as they are. Replace the (min-width: 1920px) rule with:
+   @media (min-width: 1440px) { html { font-size: max(1rem, 0.859375vw); } }
+   @media (min-width: 2560px) { html { font-size: 1.375rem; } }
+   Expected roots: 1440 → 16 · 1600 → 16 · 1862 → 16 · 1920 → 16.5 · 2048 → 17.6 · 2560 → 22 · 3440 → 22.
+   - It's continuous at 1440 (16 both sides) and at 2560 (22 both sides), and never decreases as the width grows, so the no-growth test holds.
+   - max(1rem, …) lets a larger browser default font size win (WCAG 1.4.4), like the base rule's floor.
+   - WCAG 1.4.4 under zoom: the largest root (22) is 1.57× the smallest (14), under the 2.5× limit, so text still reaches 200% within 500% zoom.
+2) Everything is rem, so type, spacing and layout follow. Re-check only:
+   - the featured band (min(…, 100svh)) and grid tiles at 1920×950;
+   - the sticky topbar and article rail fit checks at 1920×950 (they get shorter, so they may start sticking where they didn't);
+   - nothing that was tuned at 1920 by eye (grep for 1920 in src/, tests/, docs/).
+3) TESTS (tests/scaling.spec.ts): add 1600, 1862, 1920, 2048, 2560 and 3440 to the widths; assert the roots above; update any expectation that assumed 22 at 1920 (E6.4's 99/71.5/44 "at 1920+" becomes "at 2560+"; at 1920, display h1/h2/h3 compute to 74.25/53.6/33). Add the zoom check: for base widths 1920 and 2560, some zoom z in {2,3,4,5} (viewport width/z, deviceScaleFactor z) gives root × z ≥ 2 × the 100% root.
+4) DOCS: Part A A6 (the CSS block, one line on why: same physical size on a 27" 1080p and 1440p monitor), CLAUDE.md §6 if it quotes the 1920 cap, and token-log.md: "root above 1440: Eclipse's 1.25vw → 0.859375vw, cap moved 1920 → 2560 (taste, measured on Joey's 27" monitors), not parity".
+
+VERIFY:
+- lint, build and the full test:e2e suite; axe on / and one article at 1920 and 2560;
+- screenshots in screens/e6.10/: home and one article at 1440×790, 1920×950 and 2560×1305 (first screen), plus 1920 before/after side by side.
+
+Add "E6.10: root above 1440 = max(1rem, 0.859vw), cap at 2560" under Progress in CLAUDE.md, tick it, and append the handoff entry.
+```
+
+## E6.11: Scalable icon sizes (Oct 3)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0 "Sessions start cold".
+2) Read docs/progress.md (the handoff log). If E6.10 isn't ticked under Progress in CLAUDE.md, stop and tell me.
+3) Run git status and list src/ and content/ so you know what already exists. Reuse existing components and tokens; never recreate them.
+
+WHY: icons use raw spacing primitives (size-24, size-32, size-48). They scale with the root, but (a) they ignore the text they sit beside, so when E6.4/E6.6 shrank the type the arrows stayed big (a 24 ↗ next to 14px nav text on phones), and (b) they grow at the 991 root jump (21 → 24, 28 → 32, 42 → 48), the long-open "icon-size hold" item. Eclipse sizes arrows from their text (30 next to a 24 h4 = 1.25em; 66 next to a 66 h2) and steps them down at 991. Two roles, two tokens:
+
+1) TOKENS (globals.css, in the layout-token block, aliased as --spacing-* so `size-icon-*` utilities exist):
+   - --icon-inline: 1.25em. For an icon that sits beside a label: it's 1.25× the label's font size, so it follows every type change, breakpoint and floor automatically (nav 18 → 22.5; phones 14 → 17.5; the tracker label 24 → 30, Eclipse's exact ratio).
+   - --icon-tile: 3rem (48 at 1440), ≤991 2.5rem (40), ≤767 2rem (32). For the standalone tile arrows (featured and grid). At 992 it's 42, so 40 at 991 holds the no-growth rule; 40/32 are close to Eclipse's 38/32.
+2) APPLY (every Carbon icon in src/, styleguide included):
+   - Inline → size-icon-inline: Topbar ↗, Footer ↗, "All articles" ←, the "Explore the bill tracker" →, article source ↗. The icon must inherit the label's font size: if it's a sibling of the label (e.g. the tracker button, where the arrow sits next to the <Link>), move the label's type utility to their shared parent so 1em means the label. No visual change to the label itself.
+   - Tile → size-icon-tile: the featured arrow and the PostTile arrow.
+   - Pass the same size={32} to every Carbon icon, so one glyph variant renders everywhere (check in node_modules whether ArrowRight/ArrowLeft/ArrowUpRight ship separate 16/20 glyphs; if they do, 32 is still the one to scale). CSS sets the rendered size.
+   - Delete the now-unused raw size-24/32/48 on icons. Keep shrink-0.
+3) Re-check: link targets stay ≥ 24px tall (the icon is aria-hidden; the target is the link); the ↗ in the nav no longer forces "Joey Holzman ↗" to wrap between 768 and 1024 (report whether that open item is now fixed); the featured row's dek + arrow still bottom-align at 390.
+4) TESTS (scaling.spec): every icon's computed size never grows as the width shrinks (add icons to the table); at 1440, 991 and 390 each inline icon is 1.25× its label's computed font-size (±0.5), and the tile arrows are 48/40/32 (and 42 at 1280).
+5) DOCS: Part A A8 (the table: role, token, sizes; why em), CLAUDE.md §4 ("icons size from --icon-inline / --icon-tile only"), token-log.md "carry to Figma: inline icons = 1.25 × label size; tile arrows 48 / 40 tablet / 32 mobile".
+
+VERIFY:
+- lint, build and the full test:e2e suite; axe on / and one article at 1440 and 390;
+- screenshots in screens/e6.11/: topbar, footer, the tracker button, the featured tile and one grid tile at 1440, 991 and 390; one article's back link and sources at 1440 and 390.
+
+Add "E6.11: icon sizes from --icon-inline (1.25em) and --icon-tile" under Progress in CLAUDE.md, tick it, and append the handoff entry.
+```
+
+## E7: QA pass
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0 "Sessions start cold".
+2) Read docs/progress.md (the handoff log). If E6.11 isn't ticked under Progress in CLAUDE.md, stop and tell me.
 3) Run git status and list src/ and content/ so you know what already exists. Reuse existing components and tokens; never recreate them.
 
 Read docs/build-prompts.md Part A (A9) and CLAUDE.md. Don't add features. Only find and fix defects, and report.

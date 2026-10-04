@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ActionRow } from "@/components/ActionRow";
+import { ArrowRight } from "@carbon/icons-react";
 import { PostMeta } from "@/components/PostMeta";
 import { PostTile } from "@/components/PostTile";
 import { SiteEnd } from "@/components/SiteEnd";
@@ -10,6 +10,7 @@ import { Topbar } from "@/components/Topbar";
 import { getBillStats } from "@/lib/bills";
 import { formatDate } from "@/lib/dates";
 import { getAllPosts, getFeaturedPost } from "@/lib/posts";
+import { SITE_NAME } from "@/lib/site";
 
 export default function Home() {
   const stats = getBillStats();
@@ -19,69 +20,82 @@ export default function Home() {
     { label: "Introduced", value: stats.introduced },
     { label: "Reported by committee", value: stats.reported },
     { label: "Passed one chamber", value: stats.passedOneChamber },
-    { label: "Became law", value: stats.becameLaw },
+    { label: "Became law", value: stats.becameLaw, signal: true },
   ];
 
   return (
     <>
       <StickyFit />
-      <Topbar variant="home">
-        {/* Trim only the top: Figma's 24 below is from the untrimmed box. */}
-        <h1 className="mt-(--statement-top) type-display-h2 [text-box:trim-start_cap_alphabetic] max-md:mt-32">
-          See how Congress is handling AI policy.
-        </h1>
-      </Topbar>
+      <Topbar variant="home" />
       <main id="main" tabIndex={-1} className="outline-none">
-        {/* Stage 1 of the cascade: slides over the topbar, then sticks. */}
+        <h1 className="sr-only">{SITE_NAME}</h1>
+        {/* Not sticky: it slides up over the (sticky) topbar and scrolls on. */}
         <Tile
-          mode="amber"
+          mode="paper"
           as="section"
           aria-labelledby="bills-heading"
-          data-sticky
-          className="z-1 focus-within:z-3 max-md:flex max-md:flex-col"
+          className="relative z-1 pb-0 max-md:pb-8"
         >
-          {/* The action row sits on the nav's columns (Topbar), in the
-              last one, so its edges line up under it at every width. It's
-              at the top, so the featured band covers it last. Below md the
-              header dissolves into the band's column so the source line can
-              sit under the heading (CSS order: it isn't focusable, so the
-              tab order is unchanged). */}
-          <div className="grid items-start gap-y-stack max-md:contents md:grid-cols-2">
-            <h2 id="bills-heading" className="type-display-h3">
-              AI bills in the {stats.congress} Congress
+          <div className="md:flex md:flex-wrap md:items-start md:justify-between md:gap-stack">
+            {/* Top trim only, so the cap tops of the heading and (from md) the
+                source line both sit on the tile's padding. */}
+            <h2
+              id="bills-heading"
+              className="type-display-h2 [text-box:trim-start_cap_alphabetic]"
+            >
+              AI bills in the{" "}
+              <span className="text-signal">{stats.congress} Congress</span>
             </h2>
-            <div className="max-md:order-2 max-md:mt-tile md:grid md:grid-cols-(--nav-cols) md:gap-x-stack">
-              <div className="md:col-start-3">
-                <ActionRow label="Open the bill tracker" href="/tracker" />
-              </div>
-            </div>
+            <p className="type-heading-h5 text-tile-muted max-md:mt-stack md:[text-box:trim-start_cap_alphabetic]">
+              {stats.source}, updated{" "}
+              <time dateTime={stats.asOf}>{formatDate(stats.asOf)}</time>
+            </p>
           </div>
           {/* Columns are true quarters of the band, each inset by the tile
               padding, so the stats line up with the halves below. */}
-          <dl className="-mx-tile mt-tile-md grid grid-cols-2 gap-y-tile-md max-md:order-3 max-md:gap-y-32 md:grid-cols-4">
-            {statItems.map(({ label, value }) => (
+          <dl className="-mx-tile mt-tile-md grid grid-cols-2 gap-y-tile-md max-md:gap-y-32 md:grid-cols-4">
+            {statItems.map(({ label, value, signal }) => (
               <div key={label} className="flex flex-col gap-stack-sm px-tile">
                 <dt className="order-2 type-heading-h4">{label}</dt>
-                {/* Top trim only: Figma's 8 is from the number's line box. */}
-                <dd className="order-1 type-display-h1 [text-box:trim-start_cap_alphabetic]">
+                {/* Top trim only: Figma's 8 is from the number's line box.
+                    Signal only on the number: the label is under 24px (A1). */}
+                <dd
+                  className={`order-1 type-display-h1 [text-box:trim-start_cap_alphabetic] ${signal ? "text-signal" : ""}`}
+                >
                   {value.toLocaleString("en-US")}
                 </dd>
               </div>
             ))}
           </dl>
-          <p className="mt-tile-md type-heading-h5 text-tile-muted max-md:order-1 max-md:mt-stack">
-            {stats.source}, updated{" "}
-            <time dateTime={stats.asOf}>{formatDate(stats.asOf)}</time>
-          </p>
+          {/* Full bleed (-mx-tile) and flush on the band's bottom (pb-0), so
+              from md the button is exactly the right half, edge to edge.
+              Below md a paper strip (pb-8) keeps it off the navy featured
+              tile: hover and focus go ink, and ink on navy is 1.12:1. The
+              label is paper throughout, so it never computes under 24px. */}
+          <div className="-mx-tile mt-tile-md grid md:grid-cols-2">
+            <Tile
+              mode="signal"
+              interactive
+              className="relative flex items-center justify-between gap-stack [--tile-hover-bg:var(--color-ink)] [--tile-hover-fg:var(--color-paper)] md:col-start-2"
+            >
+              <Link
+                href="/tracker"
+                className="link-stretched type-heading-h4-24"
+              >
+                Explore the bill tracker
+              </Link>
+              <ArrowRight size={32} aria-hidden className="size-32 shrink-0" />
+            </Tile>
+          </div>
         </Tile>
 
-        {/* Stage 2: everything from here down slides over the bill band. */}
-        <div className="relative z-2">
+        {/* Scrolls normally, never over the bill band. */}
+        <div className="relative z-1">
           <div className="grid md:min-h-(--band-featured) md:grid-cols-2">
             <Tile
-              mode="ink"
+              mode="navy"
               interactive
-              className="relative flex flex-col justify-between gap-tile-md"
+              className="relative flex flex-col justify-between gap-tile-md [--tile-hover-bg:var(--color-amber)]"
             >
               <div>
                 <PostMeta post={featured} />
@@ -94,19 +108,21 @@ export default function Home() {
                   </Link>
                 </h2>
               </div>
-              <div>
+              <div className="flex items-end justify-between gap-stack">
                 <p className="max-w-(--dek) type-heading-h4">
                   {featured.description}
                 </p>
-                <div className="mt-stack">
-                  <ActionRow label="Read more" decorative />
-                </div>
+                <ArrowRight
+                  size={48}
+                  aria-hidden
+                  className="size-48 shrink-0"
+                />
               </div>
             </Tile>
             {/* The image fills whatever height the text tile sets. */}
             <div className="relative aspect-4/3 bg-stone md:aspect-auto">
               <Image
-                src={featured.image?.src ?? "/images/placeholder.svg"}
+                src={featured.image?.src ?? "/images/trump.png"}
                 alt={featured.image?.alt ?? ""}
                 fill
                 sizes="(min-width: 768px) 50vw, 100vw"
@@ -131,7 +147,7 @@ export default function Home() {
           </section>
         </div>
       </main>
-      <div className="relative z-2">
+      <div className="relative z-1">
         <SiteEnd />
       </div>
     </>

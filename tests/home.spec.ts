@@ -4,15 +4,18 @@ import { expect, test, type Page } from "@playwright/test";
 const navOrder = [
   "Articles",
   "Privacy Policy",
-  "Joey Holzman (external site)",
   "Bill Tracker",
   "Accessibility",
+  "Joey Holzman (external site)",
 ];
 const MINT = "rgb(194, 252, 211)";
 const INK = "rgb(8, 8, 12)";
+const SIGNAL = "rgb(255, 67, 1)";
+const PAPER = "rgb(255, 255, 255)";
+const AMBER = "rgb(255, 174, 61)";
 
 const onlyAt1440 = (name: string) =>
-  test.skip(name !== "1440x900", "the cascade checks run at 1440×900");
+  test.skip(name !== "1440x900", "the scroll checks run at 1440×900");
 
 /** The topmost element at the focused element's center is inside it. */
 const focusIsVisible = (page: Page) =>
@@ -37,15 +40,51 @@ test("axe reports no violations on /", async ({ page }) => {
   expect(violations).toEqual([]);
 });
 
+test("one h1, visually hidden, naming the site", async ({ page }) => {
+  const h1 = page.locator("h1");
+  await expect(h1).toHaveCount(1);
+  await expect(h1).toHaveText("AI in Congress");
+  const box = (await h1.boundingBox())!;
+  expect(box.width * box.height).toBeLessThanOrEqual(1);
+  expect(await h1.evaluate((el) => getComputedStyle(el).clipPath)).toBe(
+    "inset(50%)",
+  );
+});
+
+test("the topbar is as tall on / as on an article", async ({ page }, {
+  project,
+}) => {
+  test.skip(
+    !["1440x900", "390x844"].includes(project.name),
+    "checked at 1440 and 390",
+  );
+  const height = () =>
+    page.locator("header").evaluate((el) => el.getBoundingClientRect().height);
+  const home = await height();
+  await page.goto(
+    "/posts/rep-bilirakis-introduces-bill-to-prohibit-ai-generated-child-pornography",
+  );
+  expect(Math.abs((await height()) - home)).toBeLessThanOrEqual(1);
+});
+
+test("the topbar is mint, with no bottom line", async ({ page }) => {
+  const topbar = await page.locator("header").evaluate((el) => ({
+    mode: el.getAttribute("data-tile"),
+    bg: getComputedStyle(el).backgroundColor,
+    border: getComputedStyle(el).borderBottomWidth,
+  }));
+  expect(topbar).toEqual({ mode: "mint", bg: MINT, border: "0px" });
+});
+
 test("keyboard order, every stop visible and outlined", async ({ page }) => {
   const titles = await page
-    .locator("main [data-interactive] a")
+    .locator("main [data-interactive] :is(h2, h3) a")
     .allTextContents();
   const expected = [
     "Skip to content",
     "AI in Congress",
     ...navOrder,
-    "Open the bill tracker",
+    "Explore the bill tracker",
     ...titles,
     "Email address",
     "Submit",
@@ -86,23 +125,57 @@ test("each tile has exactly one link", async ({ page }) => {
   }
 });
 
-test("hover and focus flip a tile to mint, text ink", async ({ page }) => {
+test("hover and focus flip a grid tile to paper and the featured tile to amber, text ink", async ({
+  page,
+}) => {
   const colors = (selector: string) =>
     page.locator(selector).evaluate((tile) => ({
       bg: getComputedStyle(tile).backgroundColor,
       fg: getComputedStyle(tile.querySelector("h2, h3")!).color,
     }));
-  const featured = "main [data-tile=ink]";
+  const featured = "main [data-tile=navy]:has(h2)";
   const gridTile = "main article >> nth=0";
 
+  expect(await colors(gridTile)).toEqual({ bg: INK, fg: PAPER });
   await page.locator(gridTile).hover();
   await page.waitForTimeout(400);
-  expect(await colors(gridTile)).toEqual({ bg: MINT, fg: INK });
+  expect(await colors(gridTile)).toEqual({ bg: PAPER, fg: INK });
 
   await page.mouse.move(0, 0);
   await page.locator(`${featured} a`).focus();
   await page.waitForTimeout(400);
-  expect(await colors(featured)).toEqual({ bg: MINT, fg: INK });
+  expect(await colors(featured)).toEqual({ bg: AMBER, fg: INK });
+
+  await page.locator(`${featured} a`).blur();
+  await page.locator(featured).hover();
+  await page.waitForTimeout(400);
+  expect(await colors(featured)).toEqual({ bg: AMBER, fg: INK });
+});
+
+test("the bill tracker button: signal at rest, ink on hover and focus", async ({
+  page,
+}) => {
+  const button = page.locator("main section [data-tile=signal]");
+  const colors = () =>
+    button.evaluate((tile) => ({
+      bg: getComputedStyle(tile).backgroundColor,
+      label: getComputedStyle(tile.querySelector("a")!).color,
+      arrow: getComputedStyle(tile.querySelector("svg")!).color,
+    }));
+  const rest = { bg: SIGNAL, label: PAPER, arrow: PAPER };
+  const flipped = { bg: INK, label: PAPER, arrow: PAPER };
+
+  expect(await colors()).toEqual(rest);
+  await button.hover();
+  await page.waitForTimeout(400);
+  expect(await colors()).toEqual(flipped);
+
+  await page.mouse.move(0, 0);
+  await page.waitForTimeout(400);
+  expect(await colors()).toEqual(rest);
+  await button.locator("a").focus();
+  await page.waitForTimeout(400);
+  expect(await colors()).toEqual(flipped);
 });
 
 test("no horizontal scroll, down to 320", async ({ page }) => {
@@ -117,63 +190,161 @@ test("no horizontal scroll, down to 320", async ({ page }) => {
   expect(await fits()).toBe(true);
 });
 
-test.describe("sticky cascade", () => {
+// Signal is 3.47:1 on paper (and paper on signal), so text in signal or on
+// a signal tile is large text only, at every width (E6.3, E6.8).
+const ARTICLE =
+  "/posts/rep-bilirakis-introduces-bill-to-prohibit-ai-generated-child-pornography";
+
+test("signal text, and all text on signal, is never under 24px", async ({
+  page,
+}, { project }) => {
+  test.skip(project.name !== "1440x900", "sets its own widths");
+  for (const path of ["/", "/tracker", ARTICLE]) {
+    await page.goto(path, { waitUntil: "networkidle" });
+    for (const width of [1440, 1280, 991, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      const { inSignal, onSignal } = await page.evaluate((signal) => {
+        const size = (el: Element) => parseFloat(getComputedStyle(el).fontSize);
+        const inSignal = [...document.querySelectorAll("body *")]
+          .filter((el) => getComputedStyle(el).color === signal)
+          .map((el) => ({ text: el.textContent!.trim(), size: size(el) }));
+        const onSignal = [...document.querySelectorAll("[data-tile=signal]")]
+          .flatMap((tile) => {
+            const walker = document.createTreeWalker(
+              tile,
+              NodeFilter.SHOW_TEXT,
+            );
+            const nodes: Text[] = [];
+            while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+            return nodes;
+          })
+          .filter((node) => node.data.trim())
+          .map((node) => ({
+            text: node.data.trim(),
+            size: size(node.parentElement!),
+          }));
+        return { inSignal, onSignal };
+      }, SIGNAL);
+      const where = `${path} at ${width}`;
+      // Home: the heading's span and the "Became law" number, at least.
+      if (path === "/")
+        expect(inSignal.length, where).toBeGreaterThanOrEqual(2);
+      // Every page has a signal tile: the button, the header, the rail cap.
+      expect(onSignal.length, where).toBeGreaterThanOrEqual(1);
+      for (const { text, size } of [...inSignal, ...onSignal])
+        expect(size, `${where}: "${text}"`).toBeGreaterThanOrEqual(24);
+    }
+  }
+});
+
+test("a paper strip under the tracker button, below md only", async ({ page }, {
+  project,
+}) => {
+  const { gap, hit } = await page.evaluate(() => {
+    const band = document.querySelector("main > section")!;
+    const button = band.querySelector("[data-tile=signal]")!;
+    const featured = band.nextElementSibling!;
+    // Bring the seam on screen so elementFromPoint can reach it.
+    window.scrollBy(0, button.getBoundingClientRect().bottom - innerHeight / 2);
+    const bottom = button.getBoundingClientRect().bottom;
+    const top = featured.getBoundingClientRect().top;
+    const hit = document
+      .elementFromPoint(innerWidth / 2, (bottom + top) / 2)
+      ?.closest("[data-tile]")
+      ?.getAttribute("data-tile");
+    return { gap: top - bottom, hit };
+  });
+  if (project.use.viewport!.width < 768) {
+    expect(Math.abs(gap - 8)).toBeLessThanOrEqual(1);
+    expect(hit).toBe("paper");
+  } else {
+    expect(Math.abs(gap)).toBeLessThanOrEqual(1);
+  }
+});
+
+test("the featured band is at most one screen tall", async ({ page }, {
+  project,
+}) => {
+  test.skip(project.name !== "1440x900", "sets its own sizes");
+  for (const [width, height] of [
+    [1440, 790],
+    [1536, 730],
+    [1920, 950],
+    [2560, 1305],
+  ]) {
+    await page.setViewportSize({ width, height });
+    const { band, parts } = await page.evaluate(() => {
+      const tile = document.querySelector("main [data-tile=navy]:has(h2)")!;
+      const grid = tile.parentElement!;
+      window.scrollBy(0, grid.getBoundingClientRect().top);
+      return {
+        band: grid.getBoundingClientRect().height,
+        parts: ["h2", "p", "svg"].map((sel) => {
+          const box = tile.querySelector(sel)!.getBoundingClientRect();
+          return { sel, top: box.top, bottom: box.bottom };
+        }),
+      };
+    });
+    const at = `${width}×${height}`;
+    expect(band, `band at ${at}`).toBeLessThanOrEqual(height + 1);
+    // 50.4375rem at the 22px root: unchanged where it already fits.
+    if (width === 2560) expect(Math.abs(band - 1109.6)).toBeLessThan(1);
+    for (const { sel, top, bottom } of parts) {
+      expect(top, `${sel} top at ${at}`).toBeGreaterThanOrEqual(0);
+      expect(bottom, `${sel} bottom at ${at}`).toBeLessThanOrEqual(height);
+    }
+  }
+});
+
+test.describe("single-stage scroll", () => {
   const topmostAt = (page: Page, y: number) =>
     page.evaluate((y) => {
       const hit = document.elementFromPoint(700, y);
       return hit?.closest("[data-tile]")?.getAttribute("data-tile");
     }, y);
 
-  test("amber covers the topbar, then ink covers amber", async ({ page }, {
+  test("the paper band covers the topbar", async ({ page }, { project }) => {
+    onlyAt1440(project.name);
+    await page.mouse.move(0, 0);
+    // The topbar must still be pinned at the top (sticky), not just scrolled
+    // away, for the slide-over to count.
+    expect(await topmostAt(page, 100)).toBe("mint");
+    await page.evaluate(() => window.scrollTo(0, 300));
+    expect(
+      await page
+        .locator("header")
+        .evaluate((el) => el.getBoundingClientRect().top),
+    ).toBe(0);
+    expect(await topmostAt(page, 100)).toBe("paper");
+  });
+
+  test("the featured band never overlaps the bill band", async ({ page }, {
     project,
   }) => {
     onlyAt1440(project.name);
     await page.mouse.move(0, 0);
-    // The covered layer must still be pinned at the top (sticky), not just
-    // scrolled away, for the slide-over to count.
-    const topOf = (selector: string) =>
-      page.locator(selector).evaluate((el) => el.getBoundingClientRect().top);
-    expect(await topmostAt(page, 100)).toBe("mint");
-    await page.evaluate(() => window.scrollTo(0, 300));
-    expect(await topOf("header")).toBe(0);
-    expect(await topmostAt(page, 100)).toBe("amber");
-    await page.evaluate(() => window.scrollTo(0, 1000));
-    expect(await topOf("main > [data-sticky]")).toBe(0);
-    expect(await topmostAt(page, 100)).toBe("ink");
-  });
-
-  test("ink covers the source and stats first, the tracker row last", async ({
-    page,
-  }, { project }) => {
-    onlyAt1440(project.name);
-    await page.mouse.move(0, 0);
-    // Scroll until the featured band's top sits just below the action row of
-    // the (stuck) bill band.
-    const y = await page.evaluate(() => {
-      const band = document.querySelector("main > [data-sticky]")!;
-      const row = band.querySelector('a[href="/tracker"]')!;
-      const rowBottom =
-        row.getBoundingClientRect().bottom - band.getBoundingClientRect().top;
-      return (
-        band.nextElementSibling!.getBoundingClientRect().top - rowBottom - 1
-      );
-    });
-    await page.evaluate((y) => window.scrollTo(0, y), y);
-    const band = page.locator("main > [data-sticky]");
-    expect(await band.evaluate((el) => el.getBoundingClientRect().top)).toBe(0);
-    /** The topmost element at the center of `selector` is in the bill band. */
-    const showing = (selector: string) =>
-      band.locator(selector).evaluate((el) => {
-        const box = el.getBoundingClientRect();
-        const hit = document.elementFromPoint(
-          box.left + box.width / 2,
-          box.top + box.height / 2,
-        );
-        return !!hit && el.closest("[data-sticky]")!.contains(hit);
+    for (const y of [0, 200, 400, 600, 900]) {
+      await page.evaluate((y) => window.scrollTo(0, y), y);
+      const { gap, hit } = await page.evaluate(() => {
+        const band = document.querySelector("main > section")!;
+        const bandBox = band.getBoundingClientRect();
+        const next = band.nextElementSibling!.getBoundingClientRect();
+        // Whatever of the band's paper half is still on screen shows paper.
+        const y = Math.max(bandBox.top, 0) + 1;
+        return {
+          gap: next.top - bandBox.bottom,
+          hit:
+            bandBox.bottom > 1
+              ? document
+                  .elementFromPoint(20, y)
+                  ?.closest("[data-tile]")
+                  ?.getAttribute("data-tile")
+              : "paper",
+        };
       });
-    expect(await showing('a[href="/tracker"]')).toBe(true);
-    expect(await showing("dl")).toBe(false);
-    expect(await showing(":scope > p")).toBe(false);
+      expect(gap, `gap at scroll ${y}`).toBeGreaterThanOrEqual(0);
+      expect(hit, `topmost at scroll ${y}`).toBe("paper");
+    }
   });
 
   test("a focused nav link comes to the front", async ({ page }, {
@@ -196,12 +367,18 @@ test.describe("sticky cascade", () => {
       .locator("[data-sticky]")
       .evaluateAll((els) => els.map((el) => getComputedStyle(el).position));
 
-  test("sticky only where each layer fits", async ({ page }, { project }) => {
+  test("only the topbar sticks, and only while it fits", async ({ page }, {
+    project,
+  }) => {
     onlyAt1440(project.name);
-    expect(await positions(page)).toEqual(["sticky", "sticky"]);
-    // A larger root makes the bill band taller than the viewport.
-    await page.addStyleTag({ content: "html { font-size: 2rem !important }" });
-    await expect.poll(() => positions(page)).toEqual(["sticky", "relative"]);
+    expect(await positions(page)).toEqual(["sticky"]);
+    expect(
+      await page
+        .locator("main > section")
+        .evaluate((el) => getComputedStyle(el).position),
+    ).toBe("relative");
+    await page.addStyleTag({ content: "header { min-height: 120vh }" });
+    await expect.poll(() => positions(page)).toEqual(["relative"]);
   });
 });
 
@@ -214,7 +391,7 @@ test("not sticky under reduced motion", async ({ browser }) => {
   const positions = await page
     .locator("[data-sticky]")
     .evaluateAll((els) => els.map((el) => getComputedStyle(el).position));
-  expect(positions).toEqual(["relative", "relative"]);
+  expect(positions).toEqual(["relative"]);
   await page.close();
 });
 
@@ -224,11 +401,11 @@ test("without JS: content renders, nothing sticks", async ({ browser }) => {
     javaScriptEnabled: false,
   });
   await page.goto("/");
-  await expect(page.locator("h1")).toBeVisible();
+  await expect(page.locator("#bills-heading")).toBeVisible();
   await expect(page.locator("main article").first()).toBeVisible();
   const positions = await page
     .locator("[data-sticky]")
     .evaluateAll((els) => els.map((el) => getComputedStyle(el).position));
-  expect(positions).toEqual(["relative", "relative"]);
+  expect(positions).toEqual(["relative"]);
   await page.close();
 });

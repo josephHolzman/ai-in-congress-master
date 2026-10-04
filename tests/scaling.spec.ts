@@ -1,12 +1,16 @@
 import { expect, test } from "@playwright/test";
 
 // Widest first: every value must hold or shrink as the window narrows.
-const widths = [1920, 1440, 1366, 1281, 1280, 1024, 992, 991, 768, 767, 390];
+const widths = [
+  3440, 2560, 2048, 1920, 1862, 1600, 1440, 1366, 1281, 1280, 1024, 992, 991,
+  768, 767, 390,
+];
 const types = [
   "type-display-h1",
   "type-display-h2",
   "type-display-h3",
   "type-heading-h4",
+  "type-heading-h4-24",
   "type-heading-h5",
   "type-text-large",
   "type-text-medium",
@@ -25,8 +29,14 @@ const layout = [
   "article-gap",
   "image-overlap",
 ];
-// Component sizes, resolved as a width (--logo-footer is a % below 768).
-const sizes = ["logo-topbar", "logo-footer", "measure"];
+// Component sizes, resolved as a width (--mark-footer is a % below 768).
+const sizes = [
+  "logo-topbar",
+  "mark-footer",
+  "measure",
+  "disclaimer",
+  "topbar-row",
+];
 
 /** Every value that's larger than at the next wider width. */
 const grown = (rows: Record<string, number>[]) => {
@@ -109,15 +119,106 @@ test("type and layout tokens never grow as the window narrows", async ({
     expect(row["text-article"]).toBeGreaterThanOrEqual(18);
     expect(row["text-small"]).toBeGreaterThanOrEqual(13);
     expect(row["ui-label"]).toBeGreaterThanOrEqual(13);
+    expect(row["heading-h4-24"]).toBeGreaterThanOrEqual(24);
   }
 });
 
-test("the shell never grows as the window narrows", async ({
+// E6.7: back to Figma's display sizes (E6.4's smaller ones reverted). 1220
+// is a laptop window (root 14).
+// E6.10: 16.5 at 1920, 22 from 2560.
+const display = {
+  2560: [123.75, 90.75, 52.25],
+  1920: [92.81, 68.06, 39.19],
+  1440: [90, 66, 38],
+  1220: [78.75, 57.75, 33.25],
+};
+
+test("display headings follow the root: 90/66/38 at 1440, 78.75/57.75/33.25 at 1220", async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== "1440x900");
 
-  await page.goto("/tracker");
+  await page.goto("/styleguide");
+  for (const [width, expected] of Object.entries(display)) {
+    await page.setViewportSize({ width: Number(width), height: 900 });
+    const sizes = await page.evaluate(() =>
+      ["h1", "h2", "h3"].map((h) =>
+        parseFloat(
+          getComputedStyle(document.getElementById(`type-display-${h}`)!)
+            .fontSize,
+        ),
+      ),
+    );
+    expect(
+      sizes.map((s) => Math.round(s * 100) / 100),
+      `display h1/h2/h3 at ${width}`,
+    ).toEqual(expected);
+  }
+});
+
+// E6.10: above 1440 the root is max(1rem, 0.859375vw), capped at 22 from 2560.
+const roots = {
+  3440: 22,
+  2560: 22,
+  2048: 17.6,
+  1920: 16.5,
+  1862: 16,
+  1600: 16,
+  1440: 16,
+};
+
+test("the root is 16 to 1862, 16.5 at 1920, 17.6 at 2048 and 22 from 2560", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "1440x900");
+
+  await page.goto("/styleguide");
+  for (const [width, expected] of Object.entries(roots)) {
+    await page.setViewportSize({ width: Number(width), height: 900 });
+    const root = await page.evaluate(() =>
+      parseFloat(getComputedStyle(document.documentElement).fontSize),
+    );
+    expect(Math.round(root * 100) / 100, `root at ${width}`).toBe(expected);
+  }
+});
+
+// WCAG 1.4.4: browser zoom z renders a width/z layout at z device px per CSS
+// px, so text reaches 200% once the zoomed root × z doubles the 100% root.
+test("zoom up to 500% doubles the text at 1920 and 2560", async ({
+  browser,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "1440x900");
+
+  for (const width of [1920, 2560]) {
+    const at = async (z: number) => {
+      const context = await browser.newContext({
+        viewport: { width: Math.round(width / z), height: 900 },
+        deviceScaleFactor: z,
+      });
+      const page = await context.newPage();
+      await page.goto(`${testInfo.project.use.baseURL}/styleguide`);
+      const root = await page.evaluate(() =>
+        parseFloat(getComputedStyle(document.documentElement).fontSize),
+      );
+      await context.close();
+      return root * z;
+    };
+    const base = await at(1);
+    const zoomed = [];
+    for (const z of [2, 3, 4, 5]) zoomed.push(await at(z));
+    expect(
+      Math.max(...zoomed),
+      `device px at ${width}: 100% ${base}, 200–500% ${zoomed.join(" / ")}`,
+    ).toBeGreaterThanOrEqual(2 * base);
+  }
+});
+
+test("the shell and Home's buttons never grow as the window narrows", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "1440x900");
+
+  await page.goto("/");
   const rows: Record<string, number>[] = [];
   for (const width of widths) {
     await page.setViewportSize({ width, height: 900 });
@@ -136,7 +237,10 @@ test("the shell never grows as the window narrows", async ({
           "link font": px(parseFloat(getComputedStyle(link).fontSize)),
           "link height": px(link.getBoundingClientRect().height),
           "topbar logo": px(box("header svg").width),
-          "footer logo": px(box("footer svg").width),
+          "footer mark": px(box("footer svg").width),
+          "bill tracker button height": px(
+            box("main section [data-tile=signal]").height,
+          ),
           "email input height": px(box("#newsletter-email").height),
           "submit height": px(box('button[type="submit"]').height),
           // Below md the nav drops under the logo and runs full width.
@@ -160,4 +264,24 @@ test("the shell never grows as the window narrows", async ({
   );
   expect(grown(rows)).toEqual([]);
   for (const row of rows) expect(row["off the 50% line"] ?? 0).toBe(0);
+});
+
+// E6.6: heading-h5 (nav links, pills, dates) 18 at 1440; root 14 at 1220.
+const h5 = { 1440: 18, 1220: 15.75, 991: 15 };
+
+test("heading-h5 computes to 18 at 1440, 15.75 at 1220 and 15 at 991", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "1440x900");
+
+  await page.goto("/styleguide");
+  for (const [width, expected] of Object.entries(h5)) {
+    await page.setViewportSize({ width: Number(width), height: 900 });
+    const size = await page.evaluate(() =>
+      parseFloat(
+        getComputedStyle(document.getElementById("type-heading-h5")!).fontSize,
+      ),
+    );
+    expect(size, `heading-h5 at ${width}`).toBe(expected);
+  }
 });

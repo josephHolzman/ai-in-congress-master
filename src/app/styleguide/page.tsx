@@ -43,6 +43,7 @@ const typeTokens = [
   "type-display-h2",
   "type-display-h3",
   "type-heading-h4",
+  "type-heading-h4-24",
   "type-heading-h5",
   "type-text-large",
   "type-text-medium",
@@ -102,8 +103,14 @@ export default function Styleguide() {
               key={mode}
               className="flex flex-col border-r border-b border-ink"
             >
-              <div data-tile={mode} className="flex flex-col gap-stack p-tile">
-                <p className="type-heading-h4">{mode}</p>
+              {/* Paper on signal is large text only (E6.8). */}
+              <div
+                data-tile={mode}
+                className={`flex flex-col gap-stack p-tile ${mode === "signal" ? "type-heading-h4-24" : ""}`}
+              >
+                <p className={mode === "signal" ? "" : "type-heading-h4"}>
+                  {mode}
+                </p>
                 <p className="text-tile-muted">Muted text</p>
                 <hr className="border-tile-line" />
                 <p>Foreground text</p>
@@ -161,7 +168,6 @@ export default function Styleguide() {
               <Pill>{mode}</Pill>
               <ActionRow label="Open the bill tracker" href="/tracker" />
               <ActionRow label="Joey Holzman" href="#" external />
-              <ActionRow label="Read more" decorative />
             </Tile>
           ))}
         </div>

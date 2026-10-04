@@ -3,20 +3,13 @@
 import { useState } from "react";
 import { Tile } from "@/components/Tile";
 
-// Paper on signal is 3.5:1, so every text element on the band is display-h3
-// or larger (≥ 24px at every width), never heading-h4 (A3). The input and
-// button are their own paper and ink blocks, so they can go smaller.
-// Their padding is layout tokens, so they don't grow at the 991 root jump.
+// The input and button padding is layout tokens, so they don't grow at the
+// 991 root jump.
 export function NewsletterBand() {
   const [status, setStatus] = useState("");
 
   return (
-    <Tile
-      mode="signal"
-      as="section"
-      aria-labelledby="newsletter-heading"
-      className="[--tile-fg:var(--color-paper)]"
-    >
+    <Tile mode="amber" as="section" aria-labelledby="newsletter-heading">
       <h2 id="newsletter-heading" className="type-display-h2">
         Get new analysis by email
       </h2>
@@ -34,7 +27,9 @@ export function NewsletterBand() {
         <label htmlFor="newsletter-email" className="block type-display-h3">
           Email address
         </label>
-        <div className="mt-stack-sm flex flex-wrap gap-stack max-md:flex-col">
+        {/* White on amber is 1.85:1, so the input needs an ink edge (1.4.11).
+            Submit gets the same border so the two stay the same height. */}
+        <div className="mt-stack flex flex-wrap gap-stack max-md:flex-col">
           <input
             id="newsletter-email"
             type="email"
@@ -42,13 +37,13 @@ export function NewsletterBand() {
             autoComplete="email"
             placeholder="name@domain.com"
             data-tile="paper"
-            className="min-w-0 grow rounded-full px-tile py-stack type-display-h3 placeholder:text-tile-muted max-md:type-heading-h4"
+            className="min-w-0 grow rounded-full border border-ink px-tile py-stack type-display-h3 placeholder:text-tile-muted max-md:type-heading-h4"
           />
           <button
             type="submit"
             data-tile="ink"
             data-interactive
-            className="rounded-full px-tile py-stack type-display-h3 max-md:type-heading-h4 max-md:[text-box:none]"
+            className="rounded-full border border-ink px-tile py-stack type-display-h3 max-md:type-heading-h4 max-md:[text-box:none]"
           >
             Submit
           </button>

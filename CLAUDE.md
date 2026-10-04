@@ -128,7 +128,7 @@ These four rules address the most common ways coding agents fail: guessing silen
   * fonts in `src/fonts/` (Switzer Variable, roman and italic);
   * the logo in `src/assets/brand/`, rendered with `currentColor`;
   * the favicon at `src/app/icon.svg`;
-  * the placeholder image at `public/images/placeholder.svg`.
+  * the placeholder image at `public/images/trump.png` (temporary; `placeholder.svg`, the flat stone version, is kept for when it goes back).
 - **Icons:** `@carbon/icons-react` only: `ArrowRight`, `ArrowLeft` and `ArrowUpRight`. Icons are always `aria-hidden`; the text carries the meaning.
 - **Pre-launch:**
   * `SITE_LIVE` defaults to false, which sends `noindex` sitewide;
@@ -143,11 +143,14 @@ These four rules address the most common ways coding agents fail: guessing silen
 - **Tokens only.** No raw hex, px, font sizes or letter spacing in components. If a value is missing, add a token and say so in your report.
 - **Every colored block is a `<Tile mode>`.** Text, muted text and lines read from the tile's variables (`text-tile`, `text-tile-muted`, `border-tile-line`), so a mode change recolors everything inside it.
 - **Color means destination:**
-  * mint is site chrome;
-  * amber is the bill tracker;
-  * signal is the newsletter;
-  * ink is the featured tile and the footer;
-  * category colors are for article headers only.
+  * mint is site chrome and the default hover (nothing on Home uses it any more), except on article pages, where the topbar takes the category header color (with a hairline under it), and on the Home featured tile, which hovers to amber with ink text;
+  * signal (orange) is the bill tracker: signal text on Home, the "Explore the bill tracker" button (paper label; it goes ink with paper text on hover and focus), the rail cap and the /tracker header;
+  * amber is the newsletter;
+  * navy is the Home featured tile (and the Deepfakes article header);
+  * ink is the footer, the tracker button's hover and the Home grid tiles ("More analysis"), which hover to paper with ink text;
+  * category colors are for article headers (and the topbar above them) only.
+- **Signal is never text below 24px computed, at any width** (3.47:1 on paper).
+- **Signal tiles have paper text, and every piece of it is ≥ 24px computed, at any width** (3.47:1; ink reads poorly on signal despite passing WCAG 2). Labels on signal use `type-heading-h4-24`.
 - **Pills are neutral** (outlined in `tile-fg`). Category color never appears on pills.
 - **Type comes from the `type-*` utilities only.** All sizes are in rem, and the fluid root (A6) scales the whole layout.
 - **The quarter grid:**
@@ -159,13 +162,13 @@ These four rules address the most common ways coding agents fail: guessing silen
 
 ## 5. Accessibility (WCAG 2.2 AA): not optional
 
-- Only use text and background pairs from Part A. **No muted text on Sage, Signal or Slate. No small white text on Signal or Amber.**
+- Only use text and background pairs from Part A. **No muted text on Sage, Signal or Slate. No small white text on Signal or Amber.** Text on Signal is paper and ≥ 24px only.
 - **Structure:**
   * a skip link first;
   * the landmarks `header`, `nav`, `main` and `footer`;
   * one `h1` per page, with no skipped heading levels.
 - **Focus:** a visible 2px outline on every interactive element. **Hover is never the only state:** pair `:hover` with `:focus-visible` or `:focus-within`.
-- **One link per tile:** the title is the link, stretched over the tile, and the "Read more" rows are decorative (`aria-hidden`).
+- **One link per tile:** the title is the link, stretched over the tile, and the tile arrows are decorative (`aria-hidden`).
 - **Targets** are at least 24×24px.
 - **External links:** ↗ plus visually hidden "(external site)".
 - **Every image needs `alt` text.** The content schema fails the build without it.
@@ -253,4 +256,14 @@ Keep it short.
 - [x] E5: Article
 - [x] E5.1: Home refinements (nav span + bill band layout)
 - [x] E6: mobile first pass
+- [x] E6.1: new buttons, single-stage scroll, nav focus order, 991 holds
+- [x] E6.2: article image overlap, amber divider under the tracker button
+- [x] E6.3: color remap (tracker = signal, newsletter = amber, featured = navy)
+- [x] E6.4: smaller display headings (72/52/32 at 1440)
+- [x] E6.5: featured band ≤ viewport
+- [x] E6.6: heading-h5 18/25.2 (nav links), signal tracker button
+- [x] E6.7: no Home statement, bill heading display-h2
+- [x] E6.8: paper text on signal, ≥ 24px
+- [x] E6.9: article topbar in the header color
+- [x] E6.10: root above 1440 = max(1rem, 0.859vw), cap at 2560
 - [ ] E7: QA pass

@@ -15,9 +15,9 @@ export default function TrackerPage() {
     <>
       <Topbar variant="article" current="/tracker" />
       <main id="main" tabIndex={-1} className="outline-none">
-        <Tile mode="amber">
+        <Tile mode="signal">
           <h1 className="type-display-h2">Bill tracker</h1>
-          <p className="mt-stack type-text-large">
+          <p className="mt-stack type-display-h3">
             The bill tracker is in progress.
           </p>
         </Tile>

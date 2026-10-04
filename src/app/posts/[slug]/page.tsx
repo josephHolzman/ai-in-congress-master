@@ -13,6 +13,7 @@ import { CATEGORIES } from "@/lib/categories";
 import { formatDate } from "@/lib/dates";
 import { compileMdx, getAllPosts, getPost } from "@/lib/posts";
 import { Rail } from "./Rail";
+import { Title } from "./Title";
 
 // Drafts aren't generated in production, so their slugs 404.
 export const dynamicParams = false;
@@ -37,15 +38,16 @@ export default async function PostPage({ params }: PageProps<"/posts/[slug]">) {
   if (!post) notFound();
   const Body = await compileMdx(post.body);
   const bills = getBills(post.bills);
+  const headerMode = CATEGORIES[post.category].headerMode;
 
   return (
     <>
       <StickyFit />
-      <Topbar variant="article" />
+      <Topbar variant="article" mode={headerMode} />
       <main id="main" tabIndex={-1} className="outline-none">
         {/* Extra bottom padding: the image overlaps the header by that much. */}
         <Tile
-          mode={CATEGORIES[post.category].headerMode}
+          mode={headerMode}
           className="pb-[calc(var(--spacing-tile)+var(--spacing-image-overlap))]"
         >
           <Link
@@ -57,10 +59,7 @@ export default async function PostPage({ params }: PageProps<"/posts/[slug]">) {
           </Link>
           <div className="mx-auto mt-tile max-w-measure">
             <Pill>{post.category}</Pill>
-            {/* Untrimmed: Figma's 29 and 42 run box to box. */}
-            <h1 className="mt-stack type-display-h2 text-tile [text-box:none]">
-              {post.title}
-            </h1>
+            <Title>{post.title}</Title>
             <p className="mt-tile type-heading-h4 text-tile">
               {post.description}
             </p>
@@ -88,12 +87,12 @@ export default async function PostPage({ params }: PageProps<"/posts/[slug]">) {
           </div>
         </Tile>
 
-        <div data-tile="paper" className="pb-tile-lg">
+        <div data-tile="paper" className="flow-root pb-tile-lg">
           <div className="-mt-image-overlap px-tile">
             <figure className="mx-auto max-w-measure">
               <div className="relative aspect-[721/438] bg-stone">
                 <Image
-                  src={post.image?.src ?? "/images/placeholder.svg"}
+                  src={post.image?.src ?? "/images/trump.png"}
                   alt={post.image?.alt ?? ""}
                   fill
                   sizes="(min-width: 768px) 50vw, 100vw"
