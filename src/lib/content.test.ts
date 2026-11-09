@@ -1,3 +1,4 @@
+import { readdirSync, readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, test } from "vitest";
@@ -8,6 +9,14 @@ import {
   parseFrontmatter,
   postFrontmatter,
 } from "@/lib/posts";
+import {
+  billDetailSchema,
+  getTrackerBill,
+  getTrackerBills,
+  getTrackerIndex,
+  getTrackerMeta,
+} from "@/lib/tracker";
+import trackerConfig from "../../content/tracker/config.json";
 
 // Importing posts.ts validates every post; NODE_ENV is "test", so drafts count.
 const posts = getAllPosts();
@@ -43,4 +52,24 @@ test("a post missing a category fails, naming the file and field", () => {
   expect(() =>
     parseFrontmatter(postFrontmatter, "content/posts/no-category.mdx", source),
   ).toThrow(/no-category\.mdx[\s\S]*category/);
+});
+
+test("the tracker data validates and holds every watchlist bill", () => {
+  const ids = getTrackerBills().map((bill) => bill.id);
+  for (const id of trackerConfig.watchlist) expect(ids).toContain(id);
+  expect(getTrackerBill("s146-119")?.stage).toBe(5);
+  expect(getTrackerMeta().included).toBe(ids.length);
+});
+
+test("the split files (T8) hold every tracker bill and nothing else", () => {
+  const ids = getTrackerBills().map((bill) => bill.id);
+  expect(getTrackerIndex().map((bill) => bill.id)).toEqual(ids);
+  const dir = "public/data/tracker/bills";
+  expect(readdirSync(dir).sort()).toEqual(ids.map((id) => `${id}.json`).sort());
+  for (const id of ids) {
+    const detail = billDetailSchema.parse(
+      JSON.parse(readFileSync(`${dir}/${id}.json`, "utf8")),
+    );
+    expect(detail.id).toBe(id);
+  }
 });

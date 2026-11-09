@@ -76,15 +76,16 @@ export default function Home() {
             <Tile
               mode="signal"
               interactive
-              className="relative flex items-center justify-between gap-stack [--tile-hover-bg:var(--color-ink)] [--tile-hover-fg:var(--color-paper)] md:col-start-2"
+              className="relative flex items-center justify-between gap-stack type-heading-h4-24 [--tile-hover-bg:var(--color-ink)] [--tile-hover-fg:var(--color-paper)] md:col-start-2"
             >
-              <Link
-                href="/tracker"
-                className="link-stretched type-heading-h4-24"
-              >
+              <Link href="/tracker" className="link-stretched">
                 Explore the bill tracker
               </Link>
-              <ArrowRight size={32} aria-hidden className="size-32 shrink-0" />
+              <ArrowRight
+                size={32}
+                aria-hidden
+                className="size-icon-inline shrink-0"
+              />
             </Tile>
           </div>
         </Tile>
@@ -113,9 +114,9 @@ export default function Home() {
                   {featured.description}
                 </p>
                 <ArrowRight
-                  size={48}
+                  size={32}
                   aria-hidden
-                  className="size-48 shrink-0"
+                  className="size-icon-tile shrink-0"
                 />
               </div>
             </Tile>

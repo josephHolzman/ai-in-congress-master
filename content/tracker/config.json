@@ -1,0 +1,36 @@
+{
+  "_note": "TODO(joey): review the patterns, topics and watchlist.",
+  "congress": 119,
+  "billTypes": ["hr", "s", "hjres", "sjres"],
+  "subjects": ["Artificial intelligence"],
+  "titlePatterns": [
+    { "re": "\\bartificial intelligence\\b", "flags": "i" },
+    { "re": "\\bA\\.?I\\.?(?!\\/AN)(?=\\b|[- ])", "flags": "" },
+    { "re": "machine learning|deep ?fakes?|digital replicas?|\\bgenerative\\b|chatbots?|large language models?|synthetic media|frontier models?|automated decision|algorithmic", "flags": "i" }
+  ],
+  "summaryPatterns": [
+    { "re": "artificial intelligence|machine learning|deep ?fakes?|digital replicas?|generative|algorithmic|automated decision", "flags": "i" }
+  ],
+  "watchlist": ["s146-119", "hr2794-119", "hr1283-119", "hr1121-119"],
+  "exclude": [],
+  "topics": [
+    { "id": "deepfakes", "label": "Deepfakes and likeness", "re": "deep ?fakes?|digital replicas?|likeness|synthetic (media|content|images?)|intimate (images?|visual)|impersonat|voice clon|fabricated" },
+    { "id": "chatbots", "label": "Chatbots and companions", "re": "chatbots?|companion|conversational|human-like" },
+    { "id": "child-safety", "label": "Children and teens", "re": "\\bchild|\\bminors?\\b|\\bkids?\\b|\\bteens?|\\byouth|crimes against children|child safety" },
+    { "id": "elections", "label": "Elections", "re": "elections?|campaign|political ad|voters?|ballot" },
+    { "id": "transparency", "label": "Disclosure and labeling", "re": "disclos|label|transparen|watermark|provenance|bill of materials|\\bads?\\b|advertis" },
+    { "id": "safety", "label": "Safety and risk", "re": "\\brisks?\\b|kill switch|emergency button|rogue|self-improving|incident|threat|guardrail|containment|frontier|evaluation|catastroph|loss of control" },
+    { "id": "privacy", "label": "Privacy and data", "re": "privacy|personal data|data protection|data collection|biometric|surveillance" },
+    { "id": "fraud", "label": "Fraud and consumer protection", "re": "fraud|scams?|decepti|consumer|collusion|price gouging|pricing|identity theft" },
+    { "id": "bias", "label": "Bias and civil rights", "re": "\\bbias|discriminat|civil rights|algorithmic accountability|algorithmic systems|censorship" },
+    { "id": "jobs", "label": "Jobs and the economy", "re": "\\bjobs?\\b|\\bworkers?\\b|workforce|employ|labor|talent|wage|small business|main ?street" },
+    { "id": "health", "label": "Health care", "re": "health|medic|doctors?|patients?|hospital|clinical|\\bFDA\\b" },
+    { "id": "education", "label": "Education", "re": "educat|classroom|\\bschools?\\b|teachers?|literacy|universit|college" },
+    { "id": "government", "label": "Government use of AI", "re": "federal agenc|government|veterans?|\\bVA\\b|procure|\\bOMB\\b|CISA|customs|border|\\bSBA\\b|federal data" },
+    { "id": "preemption", "label": "Federal and state roles", "re": "preempt|moratorium|state law|states'? right|state regulation" },
+    { "id": "national-security", "label": "National security", "re": "national security|defense|military|armed forces|foreign adversar|China|Chinese|DeepSeek|export|chips?\\b|semiconductor|intelligence community|national intelligence|terroris|weapons|cyber" },
+    { "id": "research-compute", "label": "Research and compute", "re": "research|\\bcompute\\b|NAIRR|National Science Foundation|\\bNSF\\b|testbed|standards|NIST|grand challenge" },
+    { "id": "energy", "label": "Energy and data centers", "re": "energy|data cent|cooling|environment|climate|\\bheat\\b|grid|electricity|emissions" }
+  ],
+  "topicOverrides": {}
+}

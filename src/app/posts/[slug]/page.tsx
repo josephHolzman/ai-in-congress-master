@@ -52,9 +52,13 @@ export default async function PostPage({ params }: PageProps<"/posts/[slug]">) {
         >
           <Link
             href="/"
-            className="inline-flex items-center gap-12 type-text-large text-tile"
+            className="inline-flex min-h-target items-center gap-12 type-text-large text-tile"
           >
-            <ArrowLeft size={24} aria-hidden className="size-24 shrink-0" />
+            <ArrowLeft
+              size={32}
+              aria-hidden
+              className="size-icon-inline shrink-0"
+            />
             All articles
           </Link>
           <div className="mx-auto mt-tile max-w-measure">
@@ -161,9 +165,9 @@ export default async function PostPage({ params }: PageProps<"/posts/[slug]">) {
                             {label}
                             <span className="sr-only"> (external site)</span>
                             <ArrowUpRight
-                              size={24}
+                              size={32}
                               aria-hidden
-                              className="ml-4 inline size-24 align-middle"
+                              className="ml-4 inline size-icon-inline align-middle"
                             />
                           </a>
                         </li>

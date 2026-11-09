@@ -1,0 +1,152 @@
+{
+  "_note": "TODO(joey): approve this copy. TODO(joey): the dek's \"updated daily\" is only true once the Tracker refresh Action (.github/workflows/tracker.yml) has run green once.",
+  "title": {
+    "lead": "AI bills in the",
+    "congress": "{congress} Congress"
+  },
+  "dek": "Bills in the 119th Congress that name artificial intelligence, deepfakes or related technology in their title, plus bills we add after reading their CRS summaries. Status updated daily from Congress.gov.",
+  "source": "Congress.gov, updated",
+  "finderHeading": "Bill finder",
+  "finder": {
+    "search": "Search bills",
+    "searchPlaceholder": "Bill number, title or sponsor",
+    "chamber": "Chamber",
+    "chamberOptions": [
+      {
+        "value": "",
+        "label": "Both"
+      },
+      {
+        "value": "house",
+        "label": "House"
+      },
+      {
+        "value": "senate",
+        "label": "Senate"
+      }
+    ],
+    "status": "Status",
+    "statusOptions": [
+      {
+        "value": "",
+        "label": "Any status"
+      },
+      {
+        "value": "5",
+        "label": "Became law"
+      },
+      {
+        "value": "4",
+        "label": "Passed both chambers"
+      },
+      {
+        "value": "3",
+        "label": "Passed one chamber"
+      },
+      {
+        "value": "2",
+        "label": "Reported by committee"
+      },
+      {
+        "value": "1",
+        "label": "Introduced only"
+      }
+    ],
+    "sort": "Sort by",
+    "sortOptions": [
+      {
+        "value": "latest",
+        "label": "Latest action"
+      },
+      {
+        "value": "introduced",
+        "label": "Introduced (newest)"
+      },
+      {
+        "value": "cosponsors",
+        "label": "Most cosponsors"
+      },
+      {
+        "value": "number",
+        "label": "Bill number"
+      }
+    ],
+    "topics": "Topics",
+    "allTopics": "All topics",
+    "filters": "Filters",
+    "filtersActive": "Filters ({n})",
+    "showResults": "Show {n} bills",
+    "showResultsOne": "Show 1 bill",
+    "clearFilters": "Clear filters",
+    "clearSearch": "Clear search"
+  },
+  "columns": {
+    "bill": "Bill",
+    "title": "Title and sponsor",
+    "status": "Status",
+    "latestAction": "Latest action",
+    "cosponsors": "Cosponsors"
+  },
+  "row": {
+    "statusPrefix": "Status:",
+    "step": "Step {stage} of 5",
+    "latestActionPrefix": "Latest action:",
+    "latestShort": "Latest:",
+    "cosponsor": "cosponsor",
+    "cosponsors": "cosponsors"
+  },
+  "panel": {
+    "summary": "Summary",
+    "noSummary": "No CRS summary yet.",
+    "fullSummary": "Read the full CRS summary on Congress.gov",
+    "stands": "Where it stands",
+    "rollCall": "Roll call {roll}",
+    "committees": "Committees",
+    "cosponsors": "Cosponsors",
+    "cosponsorSplit": "{count}: {split} · {original} original",
+    "bipartisan": "Bipartisan",
+    "companion": "Companion bill",
+    "subjects": "Subjects",
+    "cbo": "CBO cost estimate",
+    "text": "Text",
+    "law": "Law",
+    "congressGov": "View on Congress.gov",
+    "loading": "Loading details…",
+    "failed": "Couldn’t load the details"
+  },
+  "noscript": {
+    "text": "The full list needs JavaScript.",
+    "link": "Download every bill as CSV"
+  },
+  "methodology": {
+    "heading": "How this list is built",
+    "paragraphs": [
+      "The tracker lists bills and joint resolutions in the {congress} Congress whose title names artificial intelligence, machine learning, deepfakes, digital replicas, generative or algorithmic systems, chatbots or related technology, plus the bills our articles cover. A bill whose Congressional Research Service summary mentions these terms, but whose title doesn’t, goes to a review queue; we add it only after reading it. Simple and concurrent resolutions are left out because they can’t become law.",
+      "Status follows each bill through five steps: introduced, reported by committee, passed one chamber, passed both chambers, and became law. It describes that bill only. When a bill’s text is enacted inside another bill, often the annual defense authorization, the original bill stays at its own step.",
+      "Titles, actions, sponsors, cosponsors, committees and summaries come from the Congress.gov API, run by the Library of Congress. This list reflects Congress.gov as of {date}; we refresh it by hand."
+    ],
+    "download": "Download the data (CSV)",
+    "downloadMeta": "{size} · {rows} rows",
+    "cite": "How to cite",
+    "citation": "AI in Congress, “AI bills in the {congress} Congress,” updated {date}, {url}."
+  },
+  "emptyBody":"Try a bill number like “H.R. 1283”, a sponsor’s last name, or a broader topic. The tracker lists bills that name AI or related technology in their title, plus bills we add after reading their summaries.",
+  "empty": {
+    "heading": "No bills match these filters",
+    "headingQuery": "No bills match “{q}”",
+    "clear": "Clear all filters"
+  },
+  "pagination": {
+    "label": "Pagination",
+    "perPage": "Bills per page",
+    "range": "{start}–{end} of {total} bills",
+    "status": "Showing {start}–{end} of {total} bills",
+    "page": "Page",
+    "pageOf": "of {pages}",
+    "previous": "Previous page",
+    "next": "Next page",
+    "statusOne": "Showing 1 bill",
+    "statusEmpty": "No bills match",
+    "rangeOne": "1 bill"
+  }
+}

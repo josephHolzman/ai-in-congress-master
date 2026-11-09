@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { isoDate } from "@/lib/dates";
+import { isoDate } from "@/lib/iso-date";
 import { parseFrontmatter } from "@/lib/posts";
 
 const pageFrontmatter = z.strictObject({

@@ -9,7 +9,11 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "test:e2e": "playwright test",
-    "test:content": "vitest run"
+    "test:content": "vitest run",
+    "tracker:probe": "node scripts/tracker/probe.mjs",
+    "tracker:fetch": "node scripts/tracker/fetch.mjs",
+    "tracker:backfill": "node scripts/tracker/fetch.mjs --full",
+    "tracker:rebuild": "node scripts/tracker/fetch.mjs --rebuild"
   },
   "dependencies": {
     "@carbon/icons-react": "^11.89.0",

@@ -7,7 +7,7 @@ import { z } from "zod";
 import { useMDXComponents } from "@/mdx-components";
 import { getBills } from "@/lib/bills";
 import { CATEGORIES, type Category } from "@/lib/categories";
-import { isoDate } from "@/lib/dates";
+import { isoDate } from "@/lib/iso-date";
 
 const POSTS_DIR = path.join(process.cwd(), "content/posts");
 const WORDS_PER_MINUTE = 230;

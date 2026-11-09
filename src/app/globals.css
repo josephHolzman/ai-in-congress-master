@@ -31,7 +31,6 @@
   --spacing-24: 1.5rem;
   --spacing-32: 2rem;
   --spacing-40: 2.5rem;
-  --spacing-48: 3rem;
   --spacing-56: 3.5rem;
   --spacing-80: 5rem;
   --spacing-140: 8.75rem;
@@ -48,6 +47,8 @@
   --spacing-stack-sm: var(--layout-stack-sm);
   --spacing-article-gap: var(--layout-article-gap);
   --spacing-image-overlap: var(--layout-image-overlap);
+  --spacing-icon-inline: var(--icon-inline);
+  --spacing-icon-tile: var(--icon-tile);
   --container-measure: var(--measure);
 }
 
@@ -69,6 +70,13 @@
   --layout-image-overlap: 6.5rem; /* 104 */
   --measure: 40rem;
 
+  /* Icons (A8). Beside a label: 1.25× the label's font size (the em resolves
+     on the icon, which inherits the label's size), so it follows every type
+     step and floor; Eclipse's ratio (30 by a 24 h4). Standalone tile arrows
+     step down at 991 and 767 instead of growing at the root jump. */
+  --icon-inline: 1.25em;
+  --icon-tile: 3rem; /* 48 */
+
   /* Shell sizes from Figma (px at 1440). */
   --logo-topbar: 10.3125rem; /* 165 */
   --mark-footer: 20.0625rem; /* 321 */
@@ -86,6 +94,29 @@
   --band-featured: min(50.4375rem, 100svh); /* 807 */
   --post-tile: 22.125rem; /* 354 */
   --dek: 30.625rem; /* 490 */
+
+  /* Bill table tracks (tracker spec §4.4, px at 1440). The @container
+     breakpoints in .bill-table are sums of these: change one, change those. */
+  --bill-col: 7.5rem; /* 120 */
+  --title-min: 15rem; /* 240 */
+  --status-col-wide: 13rem; /* 208 */
+  --status-col-medium: 12rem; /* 192 */
+  --action-min: 14rem; /* 224 */
+  --cosponsors-col: 5.5rem; /* 88 */
+  --chevron-col: 1.5rem; /* 24 */
+  --table-gap-wide: 2rem; /* 32 */
+  --table-gap-medium: 1.5rem; /* 24 */
+  --bar-height: 0.4375rem; /* 7 */
+  --bar-max: 16rem; /* 256 */
+  --progress-gap: 0.1875rem; /* 3, between the bar's segments (Figma) */
+  /* The status cell's bar and step hang below the two-line cells by this
+     much; the row pads by half of it on both sides, so the two-line text
+     sits centered between the rules (29.5 at 1440). */
+  --status-overhang: calc(var(--spacing-4) + var(--bar-height)); /* 11 */
+  --table-row-pad: calc(var(--layout-stack) + var(--status-overhang) / 2);
+  /* Finder controls (tracker spec §4.3, px at 1440). */
+  --finder-search: 24rem; /* 384 */
+  --pill-count: 1.375rem; /* 22 */
 }
 
 /* The root jumps 14 → 16px at 991, so layout steps down there too (A7).
@@ -113,6 +144,7 @@
     --measure: 35rem; /* 560 */
     --disclaimer: 30.625rem; /* 490 */
     --topbar-row: 4.375rem; /* 70 */
+    --icon-tile: 2.5rem; /* 40; 42 at 992 */
   }
 }
 
@@ -124,6 +156,7 @@
     --layout-image-overlap: var(--spacing-56);
     --nav-cols: repeat(2, minmax(0, 1fr));
     --mark-footer: min(60%, 17.5rem);
+    --icon-tile: 2rem; /* 32 */
   }
 }
 
@@ -536,14 +569,280 @@
     margin-top: calc(0.6 * var(--prose-em));
   }
 
-  .prose-article a {
+  .prose-article a,
+  .bill-panel a {
     color: var(--color-link);
     text-decoration-line: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 3px;
   }
-  .prose-article a:is(:hover, :focus-visible) {
+  .prose-article a:is(:hover, :focus-visible),
+  .bill-panel a:is(:hover, :focus-visible) {
     color: var(--color-link-hover);
     text-decoration-thickness: 2px;
+  }
+
+  /* The bill table (tracker spec §4.4). The layout follows the table's own
+     width: stacked by default, medium and wide from the container queries
+     below. The column header (.bill-head) and each row's <summary>
+     (.bill-row) share the tracks. Cells are top-aligned so the first lines
+     scan across. */
+  .bill-table {
+    container-type: inline-size;
+  }
+  .bill-head {
+    display: none;
+  }
+  /* T10: the column header sticks while the table is in view (sticky inside
+     .bill-table, so it leaves with it). A reading aid, not motion, so it
+     sticks under reduced motion too; only 640 tall and up (CLAUDE.md §5).
+     Focus never hides under it (WCAG 2.4.11): rows and links keep a
+     scroll-margin of its height, which BillTable measures. */
+  @media (min-height: 640px) {
+    .bill-head {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background-color: var(--tile-bg);
+    }
+    .bill-table :is(summary, a) {
+      scroll-margin-top: var(--bill-head-h, 0px);
+    }
+  }
+  /* Stacked has no header, so the list opens with the header's 4px tile-fg
+     rule, as the wide and medium tables do (T11). */
+  .bill-table > ol {
+    border-top: 4px solid var(--tile-fg);
+  }
+  .bill-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--chevron-col);
+    grid-template-areas:
+      "bill chev"
+      "title ."
+      "status ."
+      "action ."
+      "cos .";
+    align-items: start;
+    column-gap: var(--spacing-16);
+    row-gap: var(--layout-stack);
+    padding-block: var(--layout-stack);
+    cursor: pointer;
+    list-style: none;
+  }
+  .bill-row::-webkit-details-marker {
+    display: none;
+  }
+  .bill-cell-bill {
+    grid-area: bill;
+    white-space: nowrap;
+  }
+  .bill-cell-title {
+    grid-area: title;
+  }
+  .bill-cell-status {
+    grid-area: status;
+  }
+  .bill-cell-action {
+    grid-area: action;
+  }
+  .bill-cell-cos {
+    grid-area: cos;
+    white-space: nowrap;
+  }
+  .bill-cell-chev {
+    grid-area: chev;
+    display: flex;
+    justify-content: flex-end;
+  }
+  /* Clamping is visual only; the full text stays in the accessibility tree
+     and in the expanded row. */
+  .bill-title,
+  .bill-sponsor,
+  .bill-action {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .bill-title {
+    max-width: 60ch;
+    text-wrap: pretty;
+    -webkit-line-clamp: 4;
+  }
+  .bill-sponsor {
+    -webkit-line-clamp: 2;
+  }
+  .bill-action {
+    max-width: 48ch;
+    -webkit-line-clamp: 2;
+  }
+  .bill-bar {
+    max-width: var(--bar-max);
+    height: var(--bar-height);
+  }
+  .bill-chevron {
+    details[open] & {
+      transform: rotate(180deg);
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      transition: transform 300ms ease-out;
+    }
+  }
+
+  /* The expanded row (§4.5): one column until the wide layout, which gives
+     it the row's tracks (below). Ends with a tile of padding above the rule. */
+  .bill-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--layout-tile-pad);
+    padding-block-end: var(--layout-tile-pad);
+  }
+  .bill-prose {
+    max-width: min(var(--measure), 65ch);
+  }
+  /* Without JS the detail never loads; a <noscript> link takes its place. */
+  .bill-panel-loading {
+    @media (scripting: none) {
+      display: none;
+    }
+  }
+  /* BillRow sets data-clamped as the row opens; without JS it can't measure,
+     so the title always shows. */
+  .bill-panel-title {
+    display: none;
+    details[data-clamped] & {
+      display: block;
+    }
+    @media (scripting: none) {
+      display: block;
+    }
+  }
+
+  /* Medium: 15 + 12 + 5.5 + 1.5 + 3 × 1.5 = 38.5rem (--title-min,
+     --status-col-medium, --cosponsors-col, --chevron-col, 3 ×
+     --table-gap-medium). Container queries can't read custom properties. */
+  @container (width >= 38.5rem) {
+    .bill-head,
+    .bill-row {
+      display: grid;
+      grid-template-columns:
+        minmax(var(--title-min), 1fr) var(--status-col-medium)
+        var(--cosponsors-col) var(--chevron-col);
+      column-gap: var(--table-gap-medium);
+    }
+    .bill-head {
+      grid-template-areas: "bill status cos chev";
+    }
+    .bill-table > ol {
+      border-top: 0;
+    }
+    .bill-head > :is(.bill-cell-title, .bill-cell-action) {
+      display: none;
+    }
+    .bill-row {
+      grid-template-areas:
+        "bill status cos chev"
+        "title status cos chev"
+        "action status cos chev";
+      row-gap: var(--layout-stack-sm);
+      padding-block: var(--table-row-pad);
+    }
+    /* The bar and step hang into the bottom padding, so the row's height
+       comes from the two-line cells (§4.4 spacing). */
+    .bill-row > .bill-cell-status {
+      margin-block-end: calc(-1 * var(--status-overhang));
+    }
+    .bill-title {
+      -webkit-line-clamp: 3;
+    }
+    .bill-cell-cos {
+      text-align: right;
+    }
+    /* "cosponsors" is visible only when stacked; here it's for screen
+       readers (Tailwind's sr-only). */
+    .bill-cos-word {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
+  /* Wide: 7.5 + 15 + 13 + 14 + 5.5 + 1.5 + 5 × 2 = 66.5rem (--bill-col,
+     --title-min, --status-col-wide, --action-min, --cosponsors-col,
+     --chevron-col, 5 × --table-gap-wide). Extra width goes 3:2 to the title
+     and the latest action. */
+  @container (width >= 66.5rem) {
+    .bill-head,
+    .bill-row,
+    .bill-panel {
+      grid-template-columns:
+        var(--bill-col) minmax(var(--title-min), 3fr)
+        var(--status-col-wide) minmax(var(--action-min), 2fr)
+        var(--cosponsors-col) var(--chevron-col);
+      grid-template-areas: "bill title status action cos chev";
+      column-gap: var(--table-gap-wide);
+    }
+    .bill-head > :is(.bill-cell-title, .bill-cell-action) {
+      display: block;
+    }
+    .bill-row > .bill-cell-bill {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-4);
+    }
+    .bill-sep,
+    .bill-latest {
+      display: none;
+    }
+    .bill-action {
+      -webkit-line-clamp: 3;
+    }
+    /* From the title column on: the summary under title and status, the
+       facts under latest action to the chevron. */
+    .bill-panel > * {
+      grid-column: 2 / -1;
+    }
+    .bill-panel > .bill-panel-summary {
+      grid-column: 2 / 4;
+    }
+    .bill-panel > .bill-panel-facts {
+      grid-column: 4 / -1;
+    }
+  }
+
+  /* Topic pills (§4.3): the radio is sr-only, so the pill shows its checked
+     state and draws the global focus ring for it. */
+  .finder-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-8);
+    border: 1px solid var(--tile-fg);
+    border-radius: calc(infinity * 1px);
+    padding: var(--spacing-8) var(--spacing-16);
+    cursor: pointer;
+    @apply type-text-regular;
+  }
+  .finder-pill:has(:checked) {
+    background-color: var(--color-ink);
+    color: var(--color-paper);
+  }
+  .finder-pill:has(:focus-visible) {
+    outline: 2px solid var(--tile-fg);
+    outline-offset: 3px;
+  }
+
+  /* Pagination (§4.4b). Where the table stacks (the same 38.5rem as
+     .bill-table's medium sum), the range takes its own first line. */
+  .bill-pager {
+    container-type: inline-size;
+  }
+  @container (width < 38.5rem) {
+    .bill-pager-range {
+      order: -1;
+      flex-basis: 100%;
+    }
   }
 }

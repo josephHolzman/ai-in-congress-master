@@ -27,7 +27,11 @@ export function PostTile({
           </Link>
         </h3>
       </div>
-      <ArrowRight size={48} aria-hidden className="mt-auto size-48 shrink-0" />
+      <ArrowRight
+        size={32}
+        aria-hidden
+        className="mt-auto size-icon-tile shrink-0"
+      />
     </Tile>
   );
 }

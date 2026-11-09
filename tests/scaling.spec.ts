@@ -285,3 +285,82 @@ test("heading-h5 computes to 18 at 1440, 15.75 at 1220 and 15 at 991", async ({
     expect(size, `heading-h5 at ${width}`).toBe(expected);
   }
 });
+
+// E6.11: inline icons are 1.25em of their label; tile arrows are --icon-tile.
+// [icon, label]; a null label marks a standalone tile arrow.
+const icons: Record<string, Record<string, [string, string | null]>> = {
+  "/": {
+    "topbar ↗": ["header nav a svg", "header nav a:has(svg)"],
+    "footer ↗": ["footer nav a svg", "footer nav a:has(svg)"],
+    "tracker →": [
+      "main section [data-tile=signal] svg",
+      "main section [data-tile=signal] a",
+    ],
+    "featured arrow": ["main [data-tile=navy] svg", null],
+    "grid arrow": ["main article[data-tile=ink] svg", null],
+  },
+  // Bilirakis: it has sources and a rail.
+  "/posts/rep-bilirakis-introduces-bill-to-prohibit-ai-generated-child-pornography":
+    {
+      "back ←": ['main a[href="/"] svg', 'main a[href="/"]'],
+      "source ↗": ["main ol a[rel=noopener] svg", "main ol a[rel=noopener]"],
+      "rail ↗": ["aside a svg", "aside a"],
+    },
+};
+const tileArrow: Record<number, number> = {
+  1440: 48,
+  1280: 42,
+  991: 40,
+  390: 32,
+};
+const ratioWidths = [1440, 991, 390];
+
+test("icons never grow as the window narrows; inline = 1.25 × label, tile arrows 48/42/40/32", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "1440x900");
+
+  for (const [path, probes] of Object.entries(icons)) {
+    await page.goto(path);
+    const rows: Record<string, number>[] = [];
+    for (const width of widths) {
+      await page.setViewportSize({ width, height: 900 });
+      const row = await page.evaluate((probes) => {
+        const px = (v: number) => Math.round(v * 100) / 100;
+        const out: Record<string, number> = {};
+        for (const [name, [icon, label]] of Object.entries(probes)) {
+          const box = document.querySelector(icon)!.getBoundingClientRect();
+          out[name] = px(box.width);
+          out[`${name} h`] = px(box.height);
+          if (label)
+            out[`${name} label`] = px(
+              parseFloat(
+                getComputedStyle(document.querySelector(label)!).fontSize,
+              ),
+            );
+        }
+        return out;
+      }, probes);
+      rows.push(row);
+
+      for (const [name, [, label]] of Object.entries(probes)) {
+        if (label && ratioWidths.includes(width))
+          expect(
+            Math.abs(row[name] - 1.25 * row[`${name} label`]),
+            `${name} at ${width}: ${row[name]} vs label ${row[`${name} label`]}`,
+          ).toBeLessThanOrEqual(0.5);
+        if (!label && width in tileArrow)
+          expect(row[name], `${name} at ${width}`).toBe(tileArrow[width]);
+      }
+    }
+    console.table(
+      Object.fromEntries(
+        Object.keys(rows[0]).map((key) => [
+          key,
+          Object.fromEntries(widths.map((w, i) => [`${w}px`, rows[i][key]])),
+        ]),
+      ),
+    );
+    expect(grown(rows), path).toEqual([]);
+  }
+});

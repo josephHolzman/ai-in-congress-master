@@ -32,9 +32,9 @@ export function Footer() {
                       <>
                         <span className="sr-only"> (external site)</span>
                         <ArrowUpRight
-                          size={24}
+                          size={32}
                           aria-hidden
-                          className="size-24 shrink-0"
+                          className="size-icon-inline shrink-0"
                         />
                       </>
                     )}

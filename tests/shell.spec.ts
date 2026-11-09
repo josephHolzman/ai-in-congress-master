@@ -9,11 +9,13 @@ const navOrder = [
   "Joey Holzman (external site)",
 ];
 
+// A plain shell page: one body link. /tracker has its own spec (220 rows of
+// tab stops since T3).
 test.beforeEach(async ({ page }) => {
-  await page.goto("/tracker");
+  await page.goto("/privacy");
 });
 
-test("axe reports no violations on /tracker", async ({ page }) => {
+test("axe reports no violations on /privacy", async ({ page }) => {
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations).toEqual([]);
 });
@@ -25,6 +27,7 @@ test("keyboard order, with a visible 2px outline on every stop", async ({
     "Skip to content",
     "AI in Congress",
     ...navOrder,
+    "Vercel",
     "Email address",
     "Submit",
     ...navOrder,
@@ -111,5 +114,5 @@ test("submit announces the pre-launch message", async ({ page }) => {
   await expect(page.locator("[aria-live=polite]")).toHaveText(
     "Signups open soon.",
   );
-  expect(page.url()).toMatch(/\/tracker$/);
+  expect(page.url()).toMatch(/\/privacy$/);
 });

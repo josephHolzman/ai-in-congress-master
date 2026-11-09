@@ -10,6 +10,8 @@ const viewports = [
 
 export default defineConfig({
   testDir: "./tests",
+  // Budgets need a production server: playwright.prod.config.ts runs them.
+  testIgnore: /\.perf\.spec\.ts$/,
   use: { baseURL: "http://localhost:3000" },
   webServer: {
     command: "npm run dev",

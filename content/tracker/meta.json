@@ -1,0 +1,16 @@
+{
+  "lastRun": "2026-11-09T05:36:24Z",
+  "fetchedAt": "2026-11-09T16:06:13.997Z",
+  "congress": 119,
+  "stages": {
+    "1": 206,
+    "2": 3,
+    "3": 5,
+    "4": 0,
+    "5": 1
+  },
+  "included": 215,
+  "review": 66,
+  "requests": 286,
+  "configHash": "1e138f09b5a4"
+}

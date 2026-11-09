@@ -229,8 +229,11 @@ test("signal text, and all text on signal, is never under 24px", async ({
       // Home: the heading's span and the "Became law" number, at least.
       if (path === "/")
         expect(inSignal.length, where).toBeGreaterThanOrEqual(2);
-      // Every page has a signal tile: the button, the header, the rail cap.
-      expect(onSignal.length, where).toBeGreaterThanOrEqual(1);
+      // A signal tile on Home (the button) and articles (the rail cap);
+      // /tracker's header is paper with "119th Congress" in signal (T3).
+      if (path === "/tracker")
+        expect(inSignal.length, where).toBeGreaterThanOrEqual(1);
+      else expect(onSignal.length, where).toBeGreaterThanOrEqual(1);
       for (const { text, size } of [...inSignal, ...onSignal])
         expect(size, `${where}: "${text}"`).toBeGreaterThanOrEqual(24);
     }

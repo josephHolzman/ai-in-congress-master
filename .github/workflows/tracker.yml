@@ -1,0 +1,52 @@
+# Daily tracker refresh (docs/tracker-spec.md §3.6). Commits the data to main only when it changed.
+name: Tracker refresh
+
+on:
+  schedule:
+    - cron: "17 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tracker-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # Cache keys are immutable, so each run saves a new key and restores the latest one.
+      - uses: actions/cache@v6
+        with:
+          path: .cache/congress
+          key: congress-${{ github.run_id }}
+          restore-keys: congress-
+
+      # fetch.mjs exits non-zero on any API failure and writes nothing, so the commit step never runs.
+      - run: npm run tracker:fetch
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+
+      - name: Commit changed data
+        run: |
+          git add content/tracker content/bill-stats.json public/data
+          if git diff --cached --quiet; then
+            echo "No data changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "data: tracker refresh $(date -u +%F)"
+          git push

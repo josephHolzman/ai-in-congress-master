@@ -1,10 +1,10 @@
 {
-  "placeholder": true,
+  "placeholder": false,
   "congress": "119th",
-  "asOf": "2026-10-01",
+  "asOf": "2026-11-09",
   "source": "Congress.gov",
-  "introduced": 123,
-  "reported": 16,
-  "passedOneChamber": 4,
-  "becameLaw": 2
+  "introduced": 215,
+  "reported": 9,
+  "passedOneChamber": 6,
+  "becameLaw": 1
 }

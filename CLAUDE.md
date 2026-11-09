@@ -25,7 +25,7 @@ Every build prompt runs in a fresh, cleared session. **Assume you remember nothi
 
 **At the start of every session:**
 1. Read this file.
-2. Read `docs/progress.md`.
+2. Read `docs/progress.md`: the latest three entries, plus every entry of the series you're in (E or T). Older entries are history; search them when something refers to them.
 3. Confirm that the previous prompt is ticked under Progress. If it isn't, stop and say so.
 4. Look at what exists before you write anything.
 
@@ -129,11 +129,12 @@ These four rules address the most common ways coding agents fail: guessing silen
   * the logo in `src/assets/brand/`, rendered with `currentColor`;
   * the favicon at `src/app/icon.svg`;
   * the placeholder image at `public/images/trump.png` (temporary; `placeholder.svg`, the flat stone version, is kept for when it goes back).
-- **Icons:** `@carbon/icons-react` only: `ArrowRight`, `ArrowLeft` and `ArrowUpRight`. Icons are always `aria-hidden`; the text carries the meaning.
+- **Icons:** `@carbon/icons-react` only: `ArrowRight`, `ArrowLeft`, `ArrowUpRight`, `ChevronDown` (the tracker rows and selects), `ChevronLeft` and `ChevronRight` (the tracker pagination), and `Close` (the tracker search's clear button). Icons are always `aria-hidden`; the text carries the meaning.
 - **Pre-launch:**
   * `SITE_LIVE` defaults to false, which sends `noindex` sitewide;
-  * the newsletter form doesn't submit;
-  * `/tracker` is a stub.
+  * the newsletter form doesn't submit.
+- **Bill tracker** (`/tracker`, spec in `docs/tracker-spec.md`): a working page built from `content/tracker/` (`bills.json`, `review.json`, `meta.json`, `config.json`, `page.json`), which `scripts/tracker/` fetches from the Congress.gov API. The fetch also writes `content/bill-stats.json` (Home) and `public/data/ai-bills-119.csv`. The article rail's status lines come from the tracker when it has the bill.
+  - **Never read `.env.local`.** It holds `CONGRESS_API_KEY`. The scripts read it; you don't open, print or grep it, and the key never goes in a URL, a log, a fixture or a commit.
 - **Figma:** file `9DKYbMDVJ43Kt1IDcf0XJS`, with HomeNew `2076:2212` and Article `2075:1532`. Part A, section A1, lists the deliberate deviations from the file.
 
 ---
@@ -141,16 +142,18 @@ These four rules address the most common ways coding agents fail: guessing silen
 ## 4. Design system rules (details in `docs/build-prompts.md`, Part A)
 
 - **Tokens only.** No raw hex, px, font sizes or letter spacing in components. If a value is missing, add a token and say so in your report.
+- **Icons size from `--icon-inline` / `--icon-tile` only** (`size-icon-inline`: 1.25em of the label, so the label's type utility goes on the icon's parent; `size-icon-tile`: standalone tile arrows). Every Carbon icon gets `size={32}`; CSS sets the rendered size.
 - **Every colored block is a `<Tile mode>`.** Text, muted text and lines read from the tile's variables (`text-tile`, `text-tile-muted`, `border-tile-line`), so a mode change recolors everything inside it.
 - **Color means destination:**
   * mint is site chrome and the default hover (nothing on Home uses it any more), except on article pages, where the topbar takes the category header color (with a hairline under it), and on the Home featured tile, which hovers to amber with ink text;
-  * signal (orange) is the bill tracker: signal text on Home, the "Explore the bill tracker" button (paper label; it goes ink with paper text on hover and focus), the rail cap and the /tracker header;
+  * signal (orange) is the bill tracker: signal text on Home, the "Explore the bill tracker" button (paper label; it goes ink with paper text on hover and focus) and the rail cap. On /tracker, signal is the h1's "119th Congress" span and the status bar only;
   * amber is the newsletter;
   * navy is the Home featured tile (and the Deepfakes article header);
   * ink is the footer, the tracker button's hover and the Home grid tiles ("More analysis"), which hover to paper with ink text;
   * category colors are for article headers (and the topbar above them) only.
 - **Signal is never text below 24px computed, at any width** (3.47:1 on paper).
 - **Signal tiles have paper text, and every piece of it is ≥ 24px computed, at any width** (3.47:1; ink reads poorly on signal despite passing WCAG 2). Labels on signal use `type-heading-h4-24`.
+- **Secondary text is `text-tile-muted`, never a raw gray** (on /tracker as everywhere).
 - **Pills are neutral** (outlined in `tile-fg`). Category color never appears on pills.
 - **Type comes from the `type-*` utilities only.** All sizes are in rem, and the fluid root (A6) scales the whole layout.
 - **The quarter grid:**
@@ -176,8 +179,9 @@ These four rules address the most common ways coding agents fail: guessing silen
   * only at 768px wide and up, 640px tall and up, and without reduced motion;
   * never when the element is taller than the viewport;
   * `:focus-within` raises their z-index so focus is never covered.
+  * **Exception (T10): the /tracker column header** (`.bill-head`) stays sticky under reduced motion. It's a reading aid, not motion: it doesn't move or animate, it just keeps the column labels in view. It still needs 640px of height, sticks only inside the table, and focused rows and links keep a scroll-margin of its height, so it never covers focus.
 - **Reduced motion:** no transitions and no sticky behavior.
-- **Without JavaScript,** every page and its content render.
+- **Without JavaScript,** every page and its content render. **Exception: /tracker** renders only its first 10 bills, with a note linking the full CSV ("The full list needs JavaScript. Download every bill as CSV"), and an opened row links to Congress.gov instead of its details. Rendering all bills and their panels made the page 1.5 MB (T9); the CSV carries every bill for no-JS readers.
 - **Reflow:** no horizontal scroll at 320px wide or at 400% zoom. Text spacing overrides must not clip anything.
 
 ---
@@ -241,6 +245,11 @@ Keep it short.
 - `npm run build`: production build (static generation, type check)
 - `npm run lint`: ESLint with the Next config
 - `npm run test:e2e`: Playwright at 1440, 1280, 1024, 768 and 390 (starts the dev server if one isn't running)
+- `npm run test:content`: vitest (content, tracker data, finder and stage logic)
+- `npm run tracker:probe`: check the Congress.gov API live and refresh the fixtures
+- `npm run tracker:fetch`: incremental tracker refresh (flags: `--full`, `--only <ids>`, `--dry-run`, `--no-sweep`)
+- `npm run tracker:backfill`: full sweep from the start of the Congress (about 45–50 min)
+- `npm run tracker:rebuild`: re-classify and re-normalize the cached bills with no API calls (after a pattern, topic or excerpt change)
 
 ---
 
@@ -266,4 +275,16 @@ Keep it short.
 - [x] E6.8: paper text on signal, ≥ 24px
 - [x] E6.9: article topbar in the header color
 - [x] E6.10: root above 1440 = max(1rem, 0.859vw), cap at 2560
-- [ ] E7: QA pass
+- [x] E6.11: icon sizes from --icon-inline (1.25em) and --icon-tile
+- [x] T1: Congress.gov API verified, client, probe
+- [x] T2: tracker fetch pipeline, data files, stage logic
+- [x] T3: tracker page shell and bill table
+- [x] T4: tracker finder controls, pagination, empty state
+- [x] T5: tracker expanded rows
+- [x] T6: tracker wired to Home and the rail, methodology, docs
+- [x] T7: daily tracker refresh workflow
+- [x] E7: QA pass
+- [x] T8: tracker data fixes, topics, excerpts, split files
+- [x] T9: tracker load time, lazy panels, caching, 10 per page
+- [x] T10: tracker filters menu on phones, sticky column header
+- [x] T11: tracker bug sweep

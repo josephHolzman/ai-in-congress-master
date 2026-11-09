@@ -44,3 +44,7 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /screens/
+
+# tracker API cache, agent run logs
+.cache/
+.claude-runs/

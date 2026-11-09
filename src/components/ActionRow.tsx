@@ -13,13 +13,14 @@ const row =
 export function ActionRow({ label, href, external }: ActionRowProps) {
   const Icon = external ? ArrowUpRight : ArrowRight;
   return (
-    <Link href={href} className={row}>
-      {/* The nav links' type (Topbar), so every lined link row reads alike. */}
-      <span className="type-heading-h5">
+    // The nav links' type (Topbar), so every lined link row reads alike. It's
+    // on the link so the icon's 1.25em means the label.
+    <Link href={href} className={`${row} type-heading-h5`}>
+      <span>
         {label}
         {external && <span className="sr-only"> (external site)</span>}
       </span>
-      <Icon size={24} aria-hidden className="size-24 shrink-0" />
+      <Icon size={32} aria-hidden className="size-icon-inline shrink-0" />
     </Link>
   );
 }

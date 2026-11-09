@@ -1,7 +1,9 @@
 import { z } from "zod";
 import billsJson from "../../content/bills.json";
 import statsJson from "../../content/bill-stats.json";
-import { formatDate, isoDate } from "@/lib/dates";
+import { formatDate } from "@/lib/dates";
+import { isoDate } from "@/lib/iso-date";
+import { getTrackerBill, getTrackerMeta } from "@/lib/tracker";
 
 const billSchema = z.object({
   id: z.string().min(1),
@@ -35,8 +37,13 @@ export function sponsorLine({ sponsor }: Bill) {
   return `Sponsor: ${sponsor.name} (${sponsor.party}-${sponsor.state})`;
 }
 
-export function statusLine({ status, asOf }: Bill) {
-  return `${status} as of ${formatDate(asOf)}`;
+// The tracker's data wins when it has the bill (tracker spec §3.5); the manual
+// status in content/bills.json is the fallback.
+export function statusLine({ id, status, asOf }: Bill) {
+  const tracked = getTrackerBill(id);
+  if (!tracked) return `${status} as of ${formatDate(asOf)}`;
+  const fetched = getTrackerMeta().fetchedAt.slice(0, 10);
+  return `${tracked.stageLabel}, latest action ${formatDate(tracked.latestAction.date)}, as of ${formatDate(fetched)}`;
 }
 
 const count = z.number().int().nonnegative();

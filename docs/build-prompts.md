@@ -206,17 +206,16 @@ The layout tokens step down at 991, with the type (A5): the root jumps 14 → 16
 
 ## A8. Icons
 
-Use `@carbon/icons-react`:
+Use `@carbon/icons-react`. Two roles, two tokens (E6.11); nothing else sets an icon's size:
 
-| Icon | Where | Size |
-|---|---|---|
-| `ArrowRight` | Action rows | 24 |
-| `ArrowRight` | Featured and grid tile arrows (E6.1) | 48 |
-| `ArrowRight` | "Explore the bill tracker" button (E6.1) | 32 |
-| `ArrowLeft` | "All articles" | 24 |
-| `ArrowUpRight` | External links: nav "Joey Holzman", "Track this bill", sources | 24 |
+| Role | Icons | Token | Size |
+|---|---|---|---|
+| Inline (beside a label) | Topbar and footer "Joey Holzman" ↗, "All articles" ←, "Explore the bill tracker" →, article sources ↗, action rows ("Track this bill") | `--icon-inline` (`size-icon-inline`) | 1.25em of the label: 22.5 by the 18 nav link, 17.5 by 14 on phones, 30 by the 24 tracker label, 25 by 20 source text |
+| Tile (standalone) | Featured and grid tile arrows | `--icon-tile` (`size-icon-tile`) | 48 at 1440 (3rem; 42 at 992–1280), 40 at ≤991, 32 at ≤767 |
 
-Icons inherit `currentColor` and are `aria-hidden`. The link text carries the meaning.
+**Why em for inline icons:** an icon beside a label should follow the label's size, so every type step, breakpoint and floor carries over by itself, and it can never grow at the 991 root jump unless the label does. 1.25 is Eclipse's ratio (a 30 arrow by a 24 h4). The em resolves on the `<svg>`, so its label's type utility must sit on the icon's parent (on the tracker button, the Tile; on action rows, the link). **Tile arrows** have no label, so they're rem with steps at 991 and 767 (no growth at the jump; close to Eclipse's 38 / 32).
+
+Every icon renders `size={32}`: `ArrowRight` and `ArrowLeft` ship separate 16 (and 20/24) glyphs, `ArrowUpRight` only the 32, so 32 keeps one drawing everywhere; CSS sets the rendered size. Icons inherit `currentColor` and are `aria-hidden`. The link text carries the meaning.
 
 ## A9. Accessibility rules (non-negotiable)
 
@@ -234,13 +233,14 @@ Icons inherit `currentColor` and are `aria-hidden`. The link text carries the me
 - **Sticky elements:**
   - never on screens under 768 wide or under 640 tall, or under reduced motion;
   - `:focus-within` raises the sticky element's z-index so focus is never hidden (WCAG 2.4.11).
-  - **Home is a single stage (E6.1):** only the topbar sticks (top 0, z 0, and only while it fits the viewport, via StickyFit). The bill band is `relative`, z 1, solid paper, and slides up over it; the featured band and everything after it scroll normally (`relative`, z 1) and never cover the bill band. The article rail is the only other sticky element.
+  - **Home is a single stage (E6.1):** only the topbar sticks (top 0, z 0, and only while it fits the viewport, via StickyFit). The bill band is `relative`, z 1, solid paper, and slides up over it; the featured band and everything after it scroll normally (`relative`, z 1) and never cover the bill band. The article rail is the only other sticky element, apart from the tracker's column header.
+  - **The /tracker column header (T10)** sticks at top 0 inside `.bill-table` (wide and medium layouts) on screens 640 tall and up, **including under reduced motion**: it's a reading aid that never moves or animates, so the motion rule doesn't apply. It isn't limited to ≥ 768 wide, because the table's own width decides whether a header exists. Rows and links in the table take `scroll-margin-top` of its measured height (WCAG 2.4.11).
 - **Images:** `alt` is required in content frontmatter, and the build fails without it.
 - **Without JavaScript,** every page and all its content render.
 - **Pre-launch:**
   - the whole site sends `noindex` until `SITE_LIVE=true`;
   - the newsletter form doesn't submit anywhere yet;
-  - `/tracker` is a stub page.
+  - `/tracker` is the working bill tracker (A11, `docs/tracker-spec.md`); its data is refreshed by hand until T7's daily Action runs.
 
 ## A10. Eclipse parity
 
@@ -249,6 +249,27 @@ The reference site is https://web.archive.org/web/20240524202822/https://www.ecl
 - **You may retune tokens** (values, which token a component uses, breakpoints, the fluid root) when the scaling or rendering is clearly off.
 - **Accessibility and contrast always win,** and the palette and content stay ours.
 - **Log every change** in `docs/token-log.md`.
+
+## A11. Bill tracker
+
+`/tracker` is specified in `docs/tracker-spec.md`: the data pipeline (§3), the page and the bill table (§4), and where it departs from Figma (§5). The spec is the source of truth for the tracker; this section only lists the tokens it added to `src/app/globals.css` (all rem, none with a ≤991 step: the table changes layout at its own width instead). Each is also in `docs/token-log.md`.
+
+| Token | Value (at 16px) | Added | Use |
+|---|---|---|---|
+| `--bill-col` | 7.5rem (120) | T3 | bill number column |
+| `--title-min` | 15rem (240) | T3 | title column minimum |
+| `--status-col-wide` / `--status-col-medium` | 13rem (208) / 12rem (192) | T3 | status column |
+| `--action-min` | 14rem (224) | T3 | latest-action column minimum |
+| `--cosponsors-col` | 5.5rem (88) | T3 | cosponsors column |
+| `--chevron-col` | 1.5rem (24) | T3 | chevron column |
+| `--table-gap-wide` / `--table-gap-medium` | 2rem (32) / 1.5rem (24) | T3 | column gaps |
+| `--bar-height` / `--bar-max` | 0.4375rem (7) / 16rem (256) | T3 | the five-segment status bar |
+| `--status-overhang` | `spacing-4` + `--bar-height` | T3 | the status step's overflow below the row |
+| `--table-row-pad` | `--layout-stack` + overhang / 2 | T3 | row padding, symmetric around the overhang |
+| `--finder-search` | 24rem (384) | T4 | search field width |
+| `--pill-count` | 1.375rem (22) | T4 | topic pill count badge (min-width) |
+
+The track tokens' sums set the `.bill-table` container breakpoints: wide ≥ 66.5rem, medium ≥ 38.5rem.
 
 ---
 
@@ -1239,12 +1260,275 @@ VERIFY:
 Add "E6.11: icon sizes from --icon-inline (1.25em) and --icon-tile" under Progress in CLAUDE.md, tick it, and append the handoff entry.
 ```
 
+## T-series: the bill tracker (Nov 8)
+
+**What it is.** Seven prompts that build `/tracker` from the Congress.gov API. The design and data spec is `docs/tracker-spec.md`, and every T prompt reads it. They run after E6.11 and before E7.
+
+**How to run them.**
+- `scripts/run-prompts.ps1` runs each prompt as its own `claude -p` session, so every session starts clean.
+- After each one it checks the Progress tick and pauses so you can review and commit.
+- After T2 it runs the full data backfill itself (about an hour).
+
+**Before T1:**
+1. Get a key at https://api.congress.gov/sign-up/.
+2. In PowerShell, from the repo root, run: `Add-Content .env.local "CONGRESS_API_KEY=<your key>"`.
+
+**The prompts:**
+1. **T1:** verify the API live; the client; key handling.
+2. **T2:** the fetch pipeline, the data files, the stage logic and its tests.
+3. **T3:** the page shell and the bill table (columns, text limits, the three layouts).
+4. **T4:** the finder controls, pagination and the empty state.
+5. **T5:** the expanded rows (the chevron).
+6. **T6:** wiring to Home and the rail, the methodology section, the docs.
+7. **T7** (optional): a daily refresh with a GitHub Action.
+
+## T1: Congress.gov API: verify it live, the client, key handling (Nov 8)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0 "Sessions start cold".
+2) Read docs/progress.md: the latest three entries (step 0 below makes that the rule; follow this prompt over the current §0 wording). If E6.11 isn't ticked under Progress in CLAUDE.md, stop and tell me.
+3) Run git status and list src/, content/ and scripts/ (if it exists) so you know what already exists. Reuse existing components and tokens; never recreate them.
+4) Read docs/tracker-spec.md §1–3 (the data half). It's the source of truth for the tracker.
+
+WHY: the tracker reads the Congress.gov API v3. Spec §2 marks what's verified (✅) and what's only believed (⚠). Nothing gets built on a ⚠, so this session checks each one against live responses and writes the shared client. It doesn't build the pipeline or any UI.
+
+0) SESSION START (CLAUDE.md §0, step 2): change "Read `docs/progress.md`." to "Read `docs/progress.md`: the latest three entries, plus every entry of the series you're in (E or T). Older entries are history; search them when something refers to them." It's 850+ lines, and reading it whole every session wastes the budget. Make the same change in §0's table row if it says otherwise.
+1) KEY: CONGRESS_API_KEY is in .env.local (gitignored). Never open, print, echo or log .env.local or the key, and never put the key in a URL you log. Scripts load it with process.loadEnvFile(".env.local") inside try/catch, then read process.env.CONGRESS_API_KEY. If it's missing, stop and tell me how to add it (spec §2.1).
+2) CLIENT: scripts/tracker/congress.mjs, exactly per spec §2.3: get(path, params), paginate(path, params, itemsKey), the 750 ms spacing, retries, the disk cache in .cache/congress/, and a request counter. No dependencies. Add .cache/ and .claude-runs/ to .gitignore.
+3) PROBE: scripts/tracker/probe.mjs runs spec §2.4 items 1–11 and prints a compact report (field names, counts, the first 60 characters of text; never full payloads). Save the raw responses that the stage tests will need as fixtures in scripts/tracker/fixtures/: actions for s146 and hr1283, plus the s146 detail. Check that they contain no key. For item 11, check one roll-call page with WebFetch.
+4) Update docs/tracker-spec.md in place:
+   - turn every ⚠ in §2 into ✅, or into ❌ with what's actually true;
+   - replace the §3.3 table's codes with what the API returned (keep the stage rules; change only the codes and fallbacks);
+   - fill in the backfill estimate in §3.2 step 9 from item 10.
+   If a ❌ breaks the design (for example, /bill ignores fromDateTime), put it first in your report with the smallest fix. Don't redesign.
+5) npm script: "tracker:probe": "node scripts/tracker/probe.mjs".
+
+VERIFY:
+- lint passes;
+- run the probe twice: the second run is mostly cache hits (report both request counts);
+- the probe output, the fixtures and the git status show no key and no .cache files;
+- git status lists only the files you meant to touch.
+
+Add "T1: Congress.gov API verified, client, probe" under Progress in CLAUDE.md (above E7), tick it, and append the handoff entry. In the entry's "Open for next prompt", list every ❌ and how you resolved it.
+```
+
+## T2: Fetch pipeline, data files, stage logic (Nov 8)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0.
+2) Read docs/progress.md per §0. If T1 isn't ticked under Progress, stop and tell me.
+3) Run git status and list src/, content/ and scripts/tracker/. Reuse scripts/tracker/congress.mjs; don't rewrite it.
+4) Read docs/tracker-spec.md §1–3 in full. T1 has updated it with what's verified.
+
+WHY: the site never calls the API. A script fetches the data, normalizes it and writes JSON into content/. The build validates that JSON with zod and renders it statically. That keeps builds deterministic, keeps the key out of the build, and makes "as of" honest.
+
+1) CONFIG: content/tracker/config.json exactly as spec §3.1. Add "_note": "TODO(joey): review the patterns, topics and watchlist."
+2) STAGE: scripts/tracker/stage.mjs exports stageOf(detail, actions) → { stage, stageLabel } and milestonesOf(actions) per spec §3.3. Use the codes T1 verified. Add vitest tests in scripts/tracker/stage.test.mjs on the T1 fixtures (s146 is stage 5, "Became law"; hr1283 is stage 1), plus small synthetic action arrays for stages 2, 3 (House and Senate), 4 and Vetoed. Include scripts/ in vitest.config.mts if it isn't already, and keep test:content passing.
+3) FETCH: scripts/tracker/fetch.mjs per spec §3.2 steps 1–8: sweep window, list and summary sweeps, candidates, cached sub-endpoint fetches, classify, normalize to the §3.4 shape (summary HTML to plain paragraphs, sponsor name as "Sen. Ted Cruz" from first and last name, cosponsor party counts without withdrawn ones, the latest text version), then write everything at the end. Support the --full, --only and --dry-run flags. Print a summary at the end: requests, included, review, the change against the last run, and time taken. Keep the files small; split by job (sweep, classify, normalize) only when one file passes about 150 lines.
+4) LOADER: src/lib/tracker.ts parses content/tracker/bills.json and meta.json with zod (shape as spec §3.4; ISO dates via the existing isoDate) and exports getTrackerBills(), getTrackerMeta() and getTrackerBill(id). Bad data fails the build.
+5) STATS: the fetch script regenerates content/bill-stats.json per §3.5 with placeholder: false, keeping the schema src/lib/bills.ts expects. Leave the "placeholder" warning code in bills.ts; it just stops firing.
+6) CSV: public/data/ai-bills-119.csv per §3.2 step 6, RFC 4180 quoting, UTF-8 with no BOM.
+7) npm scripts: "tracker:fetch": "node scripts/tracker/fetch.mjs" and "tracker:backfill": "node scripts/tracker/fetch.mjs --full". The second exists because PowerShell can drop `--` from `npm run x -- --full`.
+8) RUN IT SMALL, not the full backfill (that takes about an hour, and the runner script does it after this session): `npm run tracker:fetch -- --only s146-119,hr2794-119,hr1283-119,hr1121-119` to check the output, then a normal run limited to the watchlist so content/tracker/bills.json and meta.json exist and the build works. Add a --watchlist-only flag if you need one. Report the request counts and the estimate for the full run.
+
+VERIFY:
+- lint, build, test:content (including the stage tests) all pass;
+- content/tracker/bills.json validates and holds the 4 watchlist bills with correct stages: compare each against its Congress.gov page with WebFetch and report a table of bill, our stage, Congress.gov's status, and match;
+- the CSV opens with the right columns;
+- a --dry-run right after a real run reports no changes;
+- no key appears anywhere in git status, the content files or the logs.
+
+Add "T2: tracker fetch pipeline, data files, stage logic" under Progress (above E7), tick it, and append the handoff entry. Under Open, list the full-backfill command and anything in the data that looked wrong.
+```
+
+## T3: The tracker page and the bill table (Nov 8)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0.
+2) Read docs/progress.md per §0. If T2 isn't ticked under Progress, stop and tell me.
+3) Run git status and list src/ and content/tracker/. Check content/tracker/meta.json: if the included count is 4 or fewer, the full backfill hasn't run. Say so in your report and carry on with what's there.
+4) Read docs/tracker-spec.md §1, §4.1, §4.2, §4.4, §4.7, §4.8 and §5. Read Part A A3, A5, A6, A7 and A9 for the tokens, the fluid root and the accessibility rules.
+5) If the Figma MCP is connected, screenshot BillFinder 2209:2 (file 9DKYbMDVJ43Kt1IDcf0XJS) for reference. Its spacing is bound to the token variables. Don't call get_design_context; the spec holds the values.
+
+WHY: /tracker is a stub. This session builds the page shell and the table, the part that has to hold short labels next to 200-character titles without folding badly. The filters, pagination and empty state are T4. The expanded rows are T5.
+
+1) COPY: content/tracker/page.json with spec §4.7's suggested copy (plus the pagination strings in §4.4b, for T4) and "_note": "TODO(joey): approve this copy." Load it with zod in src/lib/tracker.ts.
+2) TOKENS: add the §4.4 tracks to globals.css as layout tokens (bill, status wide and medium, cosponsors, chevron, title min, action min, the wide and medium gaps, the 7/16rem bar height, --status-overhang and --table-row-pad). Write the two @container breakpoints as numbers, with a comment that shows each one as the sum of those tokens. Log every token in docs/token-log.md with "carry to Figma" where it applies.
+3) PAGE: rewrite src/app/tracker/page.tsx (keep the metadata and robots): the Topbar, a paper Tile, the header (§4.2), the "Bill finder" h2, and the table. Leave a clearly marked slot where T4's controls go.
+4) TABLE: BillTable.tsx (the .bill-table container: the column header plus the <ol>) and BillRow.tsx, colocated in src/app/tracker/, exactly per §4.4: the cell styles and rules table, the spacing, the three container-query layouts and the semantics. Each row is a <details>/<summary> with an empty panel slot that T5 fills. Every bill renders, in the default sort (latest action, newest first). Reuse the type utilities and text-tile-muted; no new grays. Add ChevronDown to CLAUDE.md §3's icon list.
+5) TESTS: tests/tracker.spec.ts (Playwright, at every configured viewport, plus 320 and 2560 where the helpers allow):
+   - the layout is wide at 1440, 1280 and 1024, medium at 991 and 768, and stacked at 390 and 320 (assert from computed grid-template-columns or a data-layout hook);
+   - text limits: in every visible row,
+     * the bill label, chamber, status label, step, date and cosponsor count are each a single line;
+     * the title's rendered width is between 24ch and 60ch of its own font (measure ch with a hidden "0" in the same font);
+     * in the wide layout, the latest action is between 20ch and 48ch;
+     * nothing overflows its cell (scrollWidth ≤ clientWidth);
+     * rows are symmetric: in a row whose title fits on one line, the gap from the row's top edge to the top of the bill cell equals the gap from the bottom of the bill cell to the row's bottom rule (±1px). The status cell's step overhangs per §4.4 and sits at least 8px above the rule, in the wide and medium layouts at every viewport;
+   - the summary toggles with Enter and Space, and its focus ring is 2px or more;
+   - axe reports 0 violations;
+   - no horizontal scroll at 320 or at 400% zoom of 1280;
+   - with JavaScript disabled, every bill in bills.json renders.
+   If a limit fails with real data, fix it through the tokens or the clamp, not per bill, and report what you changed.
+
+VERIFY:
+- lint, build, test:content and the full test:e2e suite pass;
+- screenshots in screens/t3/ at 2560, 1440, 1280, 1024, 991, 768, 390 and 320, including the longest title and the longest latest action in the data (name them in the report);
+- compare 1440 against the Figma screenshot and list what still differs (spec §5 lists the known ones);
+- Eclipse parity isn't needed (no shared tokens changed). Say so.
+
+Add "T3: tracker page shell and bill table" under Progress (above E7), tick it, and append the handoff entry. Record the measured chars per line for the title and the latest action at each viewport.
+```
+
+## T4: Finder controls, pagination, empty state (Nov 8)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0.
+2) Read docs/progress.md per §0. If T3 isn't ticked under Progress, stop and tell me.
+3) Run git status and list src/app/tracker/. Extend BillTable and BillRow; don't fork them.
+4) Read docs/tracker-spec.md §4.1, §4.3, §4.4b, §4.6 and §4.8.
+5) If the Figma MCP is connected, screenshot BillFinder 2209:2 and BillFinderNoMatch 2212:536 for reference.
+
+WHY: a list of a few hundred bills is only useful if a researcher can narrow it fast, page through it without losing their place, share the view they ended up with, and recover when nothing matches.
+
+1) BillFinder.tsx ("use client") wraps the table. Per §4.1 and §4.3–4.6:
+   - the search (label variants, diacritic-insensitive);
+   - the chamber, status and sort selects;
+   - the topic radio pills, with counts that reflect the other filters;
+   - the role="status" count;
+   - pagination (§4.4b): per page 10/25/50/100 with 25 as the default, the range, the page select, previous/next; hidden before mount; focus moves to the count on page change;
+   - URL sync of q, chamber, status, topic, sort, page and per via replaceState, read on mount, with defaults left out;
+   - the empty state, whose clear button resets everything and focuses the search.
+   page.tsx stays a server component and passes the bills in.
+2) Put the filtering, sorting, topic counts and paging in pure functions in a colocated finder.ts, with vitest tests:
+   - search variants ("hr 2794", "H.R.2794", "2794", "s146", "Maria" → María);
+   - each filter and each sort;
+   - topic counts under a search;
+   - paging edges (the last partial page; a page number past the end clamps).
+3) Field styling per §4.3: 3.5rem fields, 1px border-tile-fg, a ChevronDown in each select. Pills per §4.3. Pagination per §4.4b: 2.5rem circular buttons, disabled at the ends, select hit areas ≥ 2.5rem. Check the existing buttons before you style "Clear all filters". Add ChevronLeft and ChevronRight to CLAUDE.md §3's icon list.
+4) TESTS (extend tests/tracker.spec.ts, at every configured viewport):
+   - axe reports 0 violations at rest, filtered, on page 2 and in the empty state;
+   - typing "zzzz" shows the empty state, the status text updates, and Clear resets the list and focuses the search;
+   - a topic narrows the list and its URL round-trips on reload;
+   - Next goes to page 2, the range reads "26–50 of N bills", focus lands on the count, Previous is enabled, and on the last page Next is disabled;
+   - changing a filter on page 3 resets to page 1;
+   - per page 50 shows 50 rows;
+   - every control has an accessible name, and targets are ≥ 24px (the pagination buttons are 40);
+   - the pagination wraps cleanly with no horizontal scroll at 390 and 320;
+   - with JavaScript disabled, every bill still renders.
+
+VERIFY:
+- lint, build, test:content and the full test:e2e suite pass;
+- screenshots in screens/t4/ at 1440, 1024, 768 and 390: the default view, a filtered view, page 2 with the focus visible on the count, the pagination close up, and the empty state;
+- compare against the two Figma screenshots and list what remains different.
+
+Add "T4: tracker finder controls, pagination, empty state" under Progress (above E7), tick it, and append the handoff entry.
+```
+
+## T5: Expanded rows (the chevron) (Nov 8)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0.
+2) Read docs/progress.md per §0. If T4 isn't ticked under Progress, stop and tell me.
+3) Run git status and list src/app/tracker/. Extend BillRow and BillFinder; don't fork them.
+4) Read docs/tracker-spec.md §3.4, §4.4 and §4.5. Read Part A A9 for the external-link pattern.
+
+WHY: the chevron opens what a policy researcher checks after the status: what the bill does (the CRS summary), how it moved (milestones and roll calls), who backs it (the party split), its companion, and where the text and the CBO score are. The data is already in content/tracker/bills.json (T2).
+
+1) PANEL: BillPanel.tsx (a server-safe plain component) renders §4.5 inside each <details>, after the summary. The full official title goes first when the row's title is clamped. Use a <dl> for the facts and an <ol> for the milestones, and omit any term with no data. External links use the existing external-link pattern. Every date is a <time> formatted with the existing date helper. Reading text keeps to the measure (max 65ch).
+2) LAYOUT: in the wide layout the panel starts at the title column and runs to the end, in two columns (summary on the left, facts on the right). In the medium and stacked layouts it's one column. Use the same .bill-table container queries as the rows; spacing comes from layout tokens only.
+3) HASH: per §4.5. On load and on hashchange: clear any filter that hides the bill, go to its page, open it and scroll it into view (instantly under reduced motion). Companion links to #id use the same path.
+4) PAYLOAD: build, then measure the gzipped /tracker HTML. If it's above 300 KB, cut the excerpt per §4.5 and re-measure. Report both numbers.
+5) TESTS (extend tests/tracker.spec.ts):
+   - axe reports 0 violations with one row open, in each layout;
+   - opening S. 146 shows "Became law", milestones in date order, and the Congress.gov link marked as external;
+   - /tracker#s146-119 loads with that row open, even when it's on another page or filtered out by the URL;
+   - a companion link opens its target row;
+   - the chevron's computed transform flips when open, with no transition under reduced motion;
+   - the panel causes no horizontal scroll at 320.
+
+VERIFY:
+- lint, build and the full test:e2e suite pass;
+- screenshots in screens/t5/: S. 146 open at 1440, 1024, 768 and 390; one bill with no summary open at 1440;
+- spot-check two open bills against their Congress.gov pages with WebFetch (milestones, cosponsor split, committees) and report mismatches.
+
+Add "T5: tracker expanded rows" under Progress (above E7), tick it, and append the handoff entry.
+```
+
+## T6: Wire the tracker into the site, methodology, docs (Nov 8)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0.
+2) Read docs/progress.md per §0. If T5 isn't ticked under Progress, stop and tell me.
+3) Run git status and list src/ and content/.
+4) Read docs/tracker-spec.md §3.5, §4.7 and §5–6.
+
+WHY: the Home stats and the article rail still show hand-entered placeholders while the tracker has the real data. The page also needs to say how its list is built, so a researcher can trust it, reuse it and cite it.
+
+1) HOME: confirm that content/bill-stats.json is generated (placeholder: false) and that Home shows those numbers with the fetch date. No component change should be needed; report it if one is.
+2) RAIL: statusLine in src/lib/bills.ts uses the tracker's stageLabel and latest-action date (as of the fetch date) when the bill's id is in the tracker, and falls back to the manual status. Add a vitest test for both paths. The rail's markup doesn't change.
+3) METHODOLOGY: the "How this list is built" section on /tracker per §4.1 and §4.7: an h2 in type-display-h3, three paragraphs from page.json on the measure, "Download the data (CSV)" linking /data/ai-bills-119.csv (with its size and row count), and "How to cite" with the citation text. It goes after the finder, with the section gap. Report it as a deliberate addition to the Figma frame.
+4) DOCS:
+   - Part A: a new "A11. Bill tracker" that points to docs/tracker-spec.md for the details and lists the tokens added in T3 and T4;
+   - CLAUDE.md §3: /tracker is no longer a stub; content/tracker/ and scripts/tracker/ exist; the key rule (never read .env.local);
+   - CLAUDE.md §4: signal on /tracker is the h1 span and the status bar only; secondary text is text-tile-muted, never a raw gray;
+   - CLAUDE.md §9: tracker:probe, tracker:fetch and tracker:backfill;
+   - build-prompts "Open items": remove "Bill tracker page", and add the review.json triage and the Figma carry list (spec §5, "Still different", items 1, 2, 3, 6 and 7);
+   - E7's gate now says "If T6 isn't ticked", and E7's deferred list drops "the bill tracker page".
+5) The old /tracker signal-header open item (carried since E6.8) is gone. Say so in the handoff.
+
+VERIFY:
+- lint, build, test:content and the full test:e2e suite pass;
+- axe reports 0 violations on /, /tracker and the TAKE IT DOWN article at 1440 and 390;
+- screenshots in screens/t6/: the Home bill band, the article rail for TAKE IT DOWN, and the methodology section at 1440 and 390;
+- the CSV link downloads.
+
+Add "T6: tracker wired to Home and the rail, methodology, docs" under Progress (above E7), tick it, and append the handoff entry. List every TODO(joey) the T-series added.
+```
+
+## T7: Daily refresh with a GitHub Action (optional)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0.
+2) Read docs/progress.md per §0. If T6 isn't ticked under Progress, stop and tell me.
+3) Read docs/tracker-spec.md §3.2 and §3.6.
+
+WHY: the dek can only say "updated daily" if something updates it daily. Running this prompt means Joey wants a GitHub Action that commits data changes to main. Its CONGRESS_API_KEY comes from a repository secret, which Joey adds himself.
+
+1) Add .github/workflows/tracker.yml per §3.6:
+   - Node from .nvmrc or the engines field (add one if neither exists, matching the local version);
+   - npm ci;
+   - npm run tracker:fetch;
+   - commit only when content/tracker/, content/bill-stats.json or public/data/ changed;
+   - permissions: contents: write only;
+   - concurrency: one run at a time;
+   - .cache/congress cached with actions/cache;
+   - a failed fetch fails the job without committing.
+2) In page.json, change the dek's source clause to "updated daily from Congress.gov" and mark it TODO(joey) until the Action has run green once.
+3) docs/tracker-spec.md §6: write the exact steps for adding the secret (Settings → Secrets and variables → Actions → New repository secret → CONGRESS_API_KEY) and for triggering the first run (Actions → Tracker refresh → Run workflow).
+
+VERIFY:
+- check the workflow against the GitHub Actions docs (WebFetch docs.github.com): triggers, permissions, the secret reference and the commit step. Report what you checked;
+- lint and build pass.
+Don't push.
+
+Add "T7: daily tracker refresh workflow" under Progress (above E7), tick it, and append the handoff entry.
+```
+
+---
+
 ## E7: QA pass
 
 ```
 FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
 1) Read CLAUDE.md in full, including section 0 "Sessions start cold".
-2) Read docs/progress.md (the handoff log). If E6.11 isn't ticked under Progress in CLAUDE.md, stop and tell me.
+2) Read docs/progress.md (the handoff log). If T6 isn't ticked under Progress in CLAUDE.md, stop and tell me.
 3) Run git status and list src/ and content/ so you know what already exists. Reuse existing components and tokens; never recreate them.
 
 Read docs/build-prompts.md Part A (A9) and CLAUDE.md. Don't add features. Only find and fix defects, and report.
@@ -1263,9 +1547,229 @@ Run and fix:
 
 Save all screenshots and reports to screens/e7/. Report:
 - every defect fixed, with its file;
-- everything still open (with the deferred items: Copy article link, Related, charts, the newsletter design, the bill tracker page).
+- everything still open (with the deferred items: Copy article link, Related, charts, the newsletter design).
 
 Tick E7 in CLAUDE.md, then append the E7 handoff entry to docs/progress.md (CLAUDE.md, "Handoff log").
+```
+
+---
+
+## T8–T11: Tracker fixes after the first full run (Nov 9)
+
+**What Joey reported:**
+1. The page takes a very long time to load.
+2. Per page should default to 10, and setting 10 misbehaves.
+3. On phones, the filters should collapse into a Filters menu.
+4. The column header should stick while scrolling.
+5. There should be more topics.
+
+**What review of the code and the handoff log found:**
+- **The page is too heavy.** The built /tracker HTML is 1.5 MB (127 KB gzip):
+  - all 220 rows render on the server with every expanded panel inside;
+  - the full bill objects ship a second time as client props;
+  - the browser hydrates 220 `<details>`.
+- **The data has false positives.** The title pattern `generative` matches "Regenerative" (3 bills), and the `A.I.` pattern matches "AI/AN" (American Indian/Alaska Native; 2 bills).
+- **Most bills have no topic:** 139 of 220.
+- **E7 found the dev server on :3000 orphaned.** It answers 500 or hangs, which makes /tracker in dev look far slower than it is.
+- **Smaller issues carried in the log:** a summary excerpt can end mid-sentence; a hash link set before hydration doesn't open its row; "hr" alone finds nothing; the bar gap is 4px, not the spec's 3px; S. 146's discharge is labeled "Reported"; Part A A9 still calls /tracker a stub.
+
+**Zustand isn't used.** The finder's state is already an external store: the URL, read with `useSyncExternalStore`, so views stay shareable. The slowness is payload and DOM size, not state. A second store would add a dependency and a second source of truth without saving a byte. T9 fixes the cause.
+
+**Run order:** T8 → T9 → T10 → T11, from PowerShell: `.\scripts\run-prompts.ps1 -Prompts T8,T9,T10,T11 -NoPause`.
+
+## T8: Tracker data: false positives, topics, excerpts, split files (Nov 9)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0.
+2) Read docs/progress.md per §0. If E7 isn't ticked under Progress, stop and tell me.
+3) Run git status and list scripts/tracker/ and content/tracker/. Reuse the existing scripts; don't rewrite them.
+4) Read docs/tracker-spec.md §3 and §4.7, and the T8–T11 intro above this prompt in docs/build-prompts.md.
+
+WHY: five published bills aren't about AI, two thirds of the bills have no topic, and the page ships every bill's full detail up front. This session fixes the data and writes it in the shape T9 needs. It doesn't touch any UI.
+
+1) FALSE POSITIVES in content/tracker/config.json titlePatterns:
+   - make "generative" a whole word (\bgenerative\b);
+   - make the A.I. pattern refuse "AI/AN" (add (?!\/AN) or equivalent).
+   Add a vitest test over the config's patterns:
+   - these must not match: "Advanced Wound Care and Regenerative Medicine Access and Reform Act", "Battery and Regenerative Braking Act", "Local Food Recycling and Regenerative Opportunities Act", "AI/AN CAPTA";
+   - these must match: "AI Kill Switch Act", "Secure A.I. Development Act of 2026", "Generative AI Terrorism Risk Assessment Act", "AI-Ready Networks Act".
+2) TOPICS: replace config.json's topics with these, in this order. Each pattern is tested case-insensitively against the title, the CRS subjects, the policy area and the first summary paragraph that ends in a period. A bill can have several topics.
+   | id | label | pattern |
+   |---|---|---|
+   | deepfakes | Deepfakes and likeness | deep ?fakes?, digital replicas?, likeness, synthetic (media\|content\|images?), intimate (images?\|visual), impersonat, voice clon, fabricated |
+   | chatbots | Chatbots and companions | chatbots?, companion, conversational, human-like |
+   | child-safety | Children and teens | \bchild, \bminors?\b, \bkids?\b, \bteens?, \byouth, crimes against children, child safety |
+   | elections | Elections | elections?, campaign, political ad, voters?, ballot |
+   | transparency | Disclosure and labeling | disclos, label, transparen, watermark, provenance, bill of materials, \bads?\b, advertis |
+   | safety | Safety and risk | \brisks?\b, kill switch, emergency button, rogue, self-improving, incident, threat, guardrail, containment, frontier, evaluation, catastroph, loss of control |
+   | privacy | Privacy and data | privacy, personal data, data protection, data collection, biometric, surveillance |
+   | fraud | Fraud and consumer protection | fraud, scams?, decepti, consumer, collusion, price gouging, pricing, identity theft |
+   | bias | Bias and civil rights | \bbias, discriminat, civil rights, algorithmic accountability, algorithmic systems, censorship |
+   | jobs | Jobs and the economy | \bjobs?\b, \bworkers?\b, workforce, employ, labor, talent, wage, small business, main ?street |
+   | health | Health care | health, medic, doctors?, patients?, hospital, clinical, \bFDA\b |
+   | education | Education | educat, classroom, \bschools?\b, teachers?, literacy, universit, college |
+   | government | Government use of AI | federal agenc, government, veterans?, \bVA\b, procure, \bOMB\b, CISA, customs, border, \bSBA\b, federal data |
+   | preemption | Federal and state roles | preempt, moratorium, state law, states'? right, state regulation |
+   | national-security | National security | national security, defense, military, armed forces, foreign adversar, China, Chinese, DeepSeek, export, chips?\b, semiconductor, intelligence community, national intelligence, terroris, weapons, cyber |
+   | research-compute | Research and compute | research, \bcompute\b, NAIRR, National Science Foundation, \bNSF\b, testbed, standards, NIST, grand challenge |
+   | energy | Energy and data centers | energy, data cent, cooling, environment, climate, \bheat\b, grid, electricity, emissions |
+   Join each row's alternatives with |. Keep topicOverrides. If any topic ends up with fewer than 4 bills, report it rather than dropping it.
+3) SUMMARY EXCERPT: the normalized summary keeps every paragraph, but add `excerpt`: the leading paragraphs up to about 600 characters, ending at a paragraph that ends in a period (never mid-sentence; S. 146's current third paragraph ends "…intimate visual depictions of"). Use the opening title-only line only when nothing else exists.
+4) MILESTONE LABEL: a committee discharge is labeled "Discharged from committee", not "Reported by committee". The stage rule is unchanged (a discharge still counts as stage 2); only the milestone label changes. Update the stage tests.
+5) SPLIT OUTPUT for fast loading (T9 uses it). The fetch script also writes:
+   - content/tracker/index.json: the row fields only, per bill: id, type, number, label, title, sponsor {name, party, state}, originChamber, introducedDate, stage, stageLabel, latestAction, cosponsors.count, topics. Sorted like bills.json. Validated by zod in src/lib/tracker.ts as TrackerIndexBill. Report its raw and gzip size.
+   - public/data/tracker/bills/{id}.json: one file per bill with everything the expanded panel needs (summary with excerpt, milestones, committees, cosponsor split, related/companions, cbo, law, text, congressGovUrl, subjects, policyArea). Delete files for bills that left the tracker.
+   bills.json stays the full record (the CSV, the rail and the tests use it).
+6) NO-API REBUILD: add `--rebuild` to fetch.mjs. It re-classifies and re-normalizes every cached bill from .cache/congress/ with no API calls, so title-pattern, topic and excerpt changes apply without a sweep. A bill whose title no longer matches and isn't on the watchlist leaves the tracker. Exclude `topics` and `topicOverrides` from the config hash, so a topic edit never forces a full sweep. Add "tracker:rebuild": "node scripts/tracker/fetch.mjs --rebuild". Run it.
+7) Update docs/tracker-spec.md §3.1 (patterns, topics), §3.2 (--rebuild, index.json, the per-bill files) and §3.4 (the excerpt).
+
+VERIFY:
+- lint, build and test:content pass;
+- after `npm run tracker:rebuild`, the 5 false positives are gone from bills.json, index.json, the CSV and the per-bill folder;
+- report a table of each topic and its bill count, plus how many bills have no topic (target: under 15%), with their titles;
+- S. 146's excerpt ends at a period;
+- the stage tests pass with the new label;
+- no key appears in any output.
+
+Add "T8: tracker data fixes, topics, excerpts, split files" under Progress, tick it, and append the handoff entry.
+```
+
+## T9: Tracker load time, caching and the per-page bug (Nov 9)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0.
+2) Read docs/progress.md per §0. If T8 isn't ticked under Progress, stop and tell me.
+3) Run git status and list src/app/tracker/ and content/tracker/. Extend BillFinder, BillTable, BillRow and BillPanel; don't fork them.
+4) Read docs/tracker-spec.md §4.1, §4.4b and §4.5, and the T8–T11 intro above this prompt in docs/build-prompts.md.
+
+WHY: /tracker's built HTML is 1.5 MB. Every bill's row and full panel render on the server, the full bill objects ship again as client props, and the browser hydrates 220 <details>. The fix is to send less, render less and cache what's fetched. It isn't a state library: the URL stays the single source of truth via useSyncExternalStore, and no Zustand or other state dependency is added.
+
+Measure first, on a production build (`npm run build`, then `npm start` on a free port; the dev server isn't a fair measure). Record:
+- /tracker HTML bytes, raw and gzip;
+- the route's JS, gzip;
+- DOM node count;
+- LCP and Total Blocking Time from Playwright's performance APIs (CDP), with 4× CPU throttling and Fast 3G network emulation, at 390 and 1440.
+Put the before numbers in the handoff.
+
+1) PER-PAGE BUG FIRST: Joey reports that the page should always render with 10 bills per page, but once per page is set to 10, "there are then only 10 bills" and the other filters adjust to that. Reproduce it in a Playwright test before changing anything: set per page to 10 and assert that the status count, the range ("1–10 of N bills"), N, the page count and every topic count are unchanged apart from the page size. Also check that per page survives a filter change, a sort change, a page change, a reload, and a hash link. Find the cause, fix it, and keep the test.
+2) DEFAULT 10 PER PAGE everywhere: DEFAULTS.per, parseState's fallback, the spec and the tests. The options stay 10/25/50/100.
+3) SEND LESS:
+   - BillFinder gets the rows from content/tracker/index.json (T8), imported in the client module, so the bundler gives it a hashed, immutably cached chunk. It never gets the full TrackerBill objects as props.
+   - page.tsx renders only what the default view shows: the first 10 rows of the default sort, with no panels, and passes nothing else bill-related to the client.
+   - Without JavaScript, the page shows those 10 rows and a <noscript> note: "The full list needs JavaScript. Download every bill as CSV" (linking the CSV), with copy in page.json. Update CLAUDE.md §5's no-JS rule with this tracker exception and its reason (spec §4.1 too).
+4) RENDER LESS: only the current page's rows are in the DOM.
+5) LAZY PANELS WITH CACHING:
+   - A row's panel content is fetched from /data/tracker/bills/{id}.json on first open, and kept in a module-level Map so reopening, paging back or re-filtering never refetches.
+   - Prefetch on pointerenter and focus of a summary, so most opens are instant.
+   - While loading, the panel shows "Loading details…" with aria-busy="true", keeping its space so the row doesn't jump.
+   - On a failed fetch, it shows "Couldn't load the details" plus the "View on Congress.gov ↗" link, and retries on the next open.
+   - Hash links still open their row after the fetch.
+   - Keep BillPanel's markup and the T5 tests' expectations; only the data source changes.
+6) HTTP CACHING in next.config.ts headers():
+   - /data/tracker/bills/:id* → Cache-Control "public, max-age=3600, stale-while-revalidate=86400" (the data changes at most daily);
+   - /data/:file*.csv → the same.
+   Next already caches its hashed chunks immutably; don't change that.
+7) BUDGETS: add tests/tracker.perf.spec.ts. It runs only against a production server; add a playwright config for it, or skip it under `next dev` with a clear message. It asserts:
+   - /tracker HTML ≤ 120 KB raw;
+   - ≤ 10 rows and no panel content in the server HTML;
+   - opening a row makes exactly one request for its JSON, and reopening makes none;
+   - LCP < 2.5 s and TBT < 200 ms at 390 under the throttling above.
+
+VERIFY:
+- lint, build, test:content and the full test:e2e suite against a production server pass. The T3–T5 tracker tests need updating for 10 per page, lazy panels and the 10-row server render: change their expectations, not their intent, and list every test you changed and why;
+- the before and after table: HTML raw/gzip, JS gzip, DOM nodes, LCP, TBT at 390 and 1440;
+- axe reports 0 violations at rest, with a row open (after its fetch), and in the loading state;
+- screenshots in screens/t9/: default at 1440 and 390, a row loading and loaded, and the no-JS view.
+
+Add "T9: tracker load time, lazy panels, caching, 10 per page" under Progress, tick it, and append the handoff entry.
+```
+
+## T10: Filters menu on phones, sticky column header (Nov 9)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0.
+2) Read docs/progress.md per §0. If T9 isn't ticked under Progress, stop and tell me.
+3) Run git status and list src/app/tracker/. Extend FinderControls, BillTable and globals.css; don't fork them.
+4) Read docs/tracker-spec.md §4.3, §4.4 and §4.8, and Part A A9.
+
+WHY: on a phone the chamber, status and sort selects plus 17 topic pills push the list a full screen down. And on a long page, the columns lose their labels as soon as the header scrolls away.
+
+1) FILTERS MENU below md (768). The same controls, rendered once (no duplicate IDs); CSS and one boolean decide the layout:
+   - The search stays visible. Under it sits a full-width "Filters" button: 3.5rem tall, 1px border-tile-fg, type-text-regular, a ChevronDown that rotates when open (motion-safe only).
+     * Its label shows the active count: "Filters" with nothing active, "Filters (2)" when chamber, status, sort or topic differ from their defaults.
+     * It has aria-expanded and aria-controls on the panel.
+   - The panel opens inline, pushing the list down, rather than as a modal, so focus never gets trapped and the back button isn't hijacked. It holds the chamber, status and sort selects stacked full width, then the topic pills, wrapping.
+   - At the bottom of the panel, two buttons:
+     * "Show {n} bills" (ink pill): closes the panel, scrolls the result count into view and focuses it;
+     * "Clear filters" (text button): resets everything but the search, and keeps the panel open.
+   - Escape closes the panel and returns focus to the Filters button.
+   - The panel always starts closed, even when the URL has active filters; the button's count shows they're active.
+   - At md and up there's no button, and the controls lay out exactly as now.
+   - Copy goes in page.json.
+2) STICKY COLUMN HEADER in the wide and medium table layouts (the stacked layout has no header):
+   - .bill-head is position: sticky at top 0 (the /tracker topbar isn't sticky; check it). Paper background, a z-index above rows, and its 4px rules kept.
+   - Only while the table is in view: it sticks inside .bill-table and leaves with it.
+   - FOCUS NOT OBSCURED (WCAG 2.4.11): a summary that gets keyboard focus must never sit under the stuck header. Give each row a scroll-margin-top of the header's height (a CSS variable set from the header's measured height, or a token that matches it) and check it with a keyboard walk.
+   - This is a reading aid, not motion, so it stays sticky under prefers-reduced-motion. Write that exception into CLAUDE.md §5 and Part A A9, next to the existing sticky rules, with the reason.
+   - Only when the viewport is at least 640px tall (CLAUDE.md §5's height rule).
+3) TESTS (extend tests/tracker.spec.ts):
+   - at 390 the selects and pills are hidden until the Filters button opens them, and the button's count reads "Filters (2)" after two filters are set;
+   - "Show n bills" closes the panel and focuses the count;
+   - Escape returns focus to the button;
+   - axe reports 0 violations with the panel open and closed;
+   - at 1440, after scrolling halfway through the table, the header's top is 0 and every column label is visible;
+   - a Tab walk through the rows never leaves a focused summary's top above the header's bottom edge;
+   - under reduced motion the header still sticks;
+   - at 1440×600 (under 640 tall) the header doesn't stick.
+
+VERIFY:
+- lint, build and the full test:e2e suite against a production server pass;
+- screenshots in screens/t10/: 390 with the menu closed, open, and with 2 active filters; 1440 and 1024 mid-scroll with the header stuck; a keyboard-focused row just under the header.
+
+Add "T10: tracker filters menu on phones, sticky column header" under Progress, tick it, and append the handoff entry.
+```
+
+## T11: Tracker bug sweep (Nov 9)
+
+```
+FRESH SESSION: assume you remember nothing from earlier sessions. Before anything else:
+1) Read CLAUDE.md in full, including section 0.
+2) Read docs/progress.md per §0. If T10 isn't ticked under Progress, stop and tell me.
+3) Run git status and list src/app/tracker/.
+4) Read docs/tracker-spec.md §4 and the T8–T11 intro above this prompt in docs/build-prompts.md.
+
+WHY: the handoff log has carried small tracker defects since T3. Fix them, then hunt for more with fresh eyes. Defects only: no new features.
+
+Fix each of these, with a test where one is practical:
+1) SEARCH: "hr", "s", "h.r." or "hjres" alone (a bill type with no number) should list that type's bills. Today "hr" finds nothing because the haystack holds "h.r.". Add the case to finder.test.ts.
+2) PRE-HYDRATION HASH: a hash set on an already-loaded page before hydration doesn't open its row (T5's note). Make the hash effect read location.hash when it first runs after hydration, and test it with the immediate goto("#…") that T5 described.
+3) PROGRESS BAR GAP: the bar uses gap-4. The spec and Figma use 3px (--progress-gap, 3/16rem). Add the token if it's missing, and log it.
+4) STACKED LAYOUT TOP RULE: the first row has no rule above it below 38.5rem (T3's note). Add the table's top rule to match the other layouts' header rule, or a 1px tile-line, whichever matches the wide layout's visual rhythm. Report which you chose.
+5) THE NATIVE SEARCH CLEAR "×" is Chrome's blue. Hide the WebKit cancel button and add our own clear button inside the field: aria-label "Clear search", ink, size-icon-inline, a target of at least 24×24px, visible only when there's a query, and focus returns to the input.
+6) THE PAGER ON PHONES takes three lines at 390 (T4's note). Put the range and per page on one line and the pager on the next, if that fits at 320 without overflow; otherwise leave it and report.
+7) STALE DOCS: Part A A9 still says "/tracker is a stub page". Fix it, and grep the docs for any other "stub" mentions of /tracker.
+8) HUNT: run the whole tracker in a production build at 1440, 1024, 768, 390 and 320, keyboard only and then with a screen-reader-style accessibility tree dump (Playwright's ariaSnapshot) of one row, open and closed. Look for:
+   - wrong or missing accessible names;
+   - focus loss after any action (filter, page, clear, open, close, the Filters menu);
+   - layout overflow with the longest title, the longest latest action and the longest sponsor name in the data;
+   - a stage label that disagrees with its bar;
+   - dates in the wrong order;
+   - an empty panel term;
+   - console errors and hydration warnings;
+   - the status count and range disagreeing;
+   - URLs that don't round-trip.
+   Fix what you find and list each fix with its file. List anything you judge not worth fixing, with the reason.
+9) DEV SERVER: if :3000 doesn't answer 200 on /tracker within 30 s, say so at the top of the report. Joey must kill it (E7 found an orphaned dev server) before trusting dev-mode timing.
+
+VERIFY:
+- lint, build, test:content and the full test:e2e suite against a production server pass, plus tests/tracker.perf.spec.ts from T9;
+- axe reports 0 violations on /tracker at 1440 and 390: at rest, filtered, with a row open, in the empty state, and with the phone Filters menu open;
+- screenshots in screens/t11/ for each visual fix (before and after where it's visual).
+
+Add "T11: tracker bug sweep" under Progress, tick it, and append the handoff entry, ending with every open TODO(joey) for the tracker.
 ```
 
 ---
@@ -1273,7 +1777,13 @@ Tick E7 in CLAUDE.md, then append the E7 handoff entry to docs/progress.md (CLAU
 ## Open items (design, not code)
 
 - **Newsletter form:** Joey is designing the final version. The build adds a visible label and keeps the Figma shapes for now.
-- **Bill tracker page:** a stub exists at `/tracker`.
+- **Tracker review queue:** go through `content/tracker/review.json` (66 bills after the first backfill) and move each into the `watchlist` or `exclude` in `content/tracker/config.json`.
+- **Figma carry list for the tracker** (tracker spec §5, "Still different"):
+  * (#1) latest action is Text/Regular, not H5 (7 text layers);
+  * (#2) the status bar fills n segments ("Step 5 of 5" shows 5, not 4);
+  * (#3) chamber is the originating chamber ("S. 146 · House" is wrong);
+  * (#6) pagination copy: "Bills per page", "1–25 of 214 bills", "Page [1] of 9" (10 per page by default since T9, as in Figma);
+  * (#7) Figma's placeholder errors: "H.R, 2794" has a comma, and NO FAKES is marked "Became law".
 - **Figma file updates:**
   * set `Heading/H5` to Switzer;
   * change the `cobalt` variable to blue `#0060C4`;

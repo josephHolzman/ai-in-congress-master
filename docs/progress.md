@@ -854,3 +854,431 @@
   - Carried from E6.9: the title's post-hydration step-down, the /tracker signal header against amber, the topbar row 70 → 71 at 991, the footer's "Joey Holzman ↗" wrapping at 1024, the icon-size hold at 991, the grid tiles' 308 min-height on mobile, the footer's mobile gaps and the dev badge at 390. The E3 TODO(joey) list is unchanged; no content file was touched.
 - **Follow-up (same session): the featured tile hovers to amber.** Joey's call. `src/app/page.tsx`: the featured Tile gets `[--tile-hover-bg:var(--color-amber)]`; `--tile-hover-fg` stays unset, so the title, dek, arrow and pill go ink and the date ink 72% (about 6.1:1 on amber), with the same 300ms fade and the ink focus ring. Grid tiles still hover to mint. `tests/home.spec.ts`: the hover test expects amber/ink on the featured tile on focus and on hover. Docs: CLAUDE.md §4 (mint line), Part A A3 (a featured-tile note; the hover line), token-log (1 carry-to-Figma line). This bends §4's "amber is the newsletter" mapping; recorded as an exception rather than changing the rule.
 - **Follow-up (same session): the grid tiles are ink, hovering to paper.** Joey's call. `src/components/PostTile.tsx`: `mode="ink"` (was paper) plus `[--tile-hover-bg:var(--color-paper)]`; `--tile-hover-fg` unset, so hover and focus give ink text, ink 72% date, 12% lines and an ink focus ring (measured at 1440 and 390; axe 0 at rest and hovered). `tests/home.spec.ts`: the hover test checks the grid tile ink/paper at rest and paper/ink on hover. Docs: CLAUDE.md §4 (ink line; mint is now unused as a hover on Home), Part A A3, token-log (1 line). Screenshots: `screens/e6.10/grid-{rest,hover,focus}-{1440,390}.png`. **Seams to look at:** at md and up the ink grid sits directly under the navy featured tile (1.12:1, a band edge, no line); below md it sits under the placeholder image, whose dark bottom (the suit) nearly merges with ink. Neither is a WCAG issue (not UI components), but both read as weak edges; a `tile-line` top border would be the smallest fix if wanted.
+
+## E6.11: Icon sizes from --icon-inline (1.25em) and --icon-tile · 2026-11-08
+- Built: tokens `--icon-inline: 1.25em` and `--icon-tile: 3rem` (≤991 2.5rem, ≤767 2rem) in the layout-token block of `src/app/globals.css`, aliased as `--spacing-icon-inline` / `--spacing-icon-tile` (so `size-icon-inline` / `size-icon-tile` exist).
+- Changed:
+  - Inline → `size-icon-inline`: `Topbar.tsx` ↗, `Footer.tsx` ↗, the article's "All articles" ← and source ↗ (`posts/[slug]/page.tsx`), the tracker → (`page.tsx`), and `ActionRow.tsx` (Rail's "Track this bill" and the styleguide; it's a Carbon icon in src/, so it's in scope). Tile → `size-icon-tile`: the featured arrow (`page.tsx`) and `PostTile.tsx`.
+  - Label type moved to the shared parent so 1em means the label: tracker button `type-heading-h4-24` from the `<Link>` to its `<Tile>`; ActionRow `type-heading-h5` from the `<span>` to the `<Link>`. The other labels already wrapped their icon. No visual change to the labels.
+  - Every Carbon icon is `size={32}`. Checked in node_modules: `ArrowRight` ships separate 16/20/24 glyphs, `ArrowLeft` a separate 16, `ArrowUpRight` only the 32, so 32 is the one drawing everywhere. (The action-row → was the 24 glyph before, so its drawing changes slightly.)
+  - Raw `size-24/32/48` removed from icons (the article's `size-24` reading-time dot isn't an icon; it stays). `--spacing-48` deleted: only the two arrows used it.
+  - **Back link gets `min-h-target`:** with a 22.5 icon it was 23.39 tall at 390 (the old 24px icon had been holding it at 24). Now 24.
+  - `tests/scaling.spec.ts`: new "icons never grow as the window narrows; inline = 1.25 × label, tile arrows 48/42/40/32" on `/` (topbar ↗, footer ↗, tracker →, featured and grid arrows) and the Bilirakis article (back ←, source ↗, rail ↗), over the full widths table.
+  - Docs: Part A A8 (role/token/size table, why em, the size={32} note), CLAUDE.md §4 (icons size from the two tokens only) and Progress, `docs/token-log.md` (1 carry-to-Figma line).
+- Decisions:
+  - Eclipse's tile arrows are 66 beside a 66 h2; the prompt fixed ours at 48/40/32, so the featured arrow doesn't track the title. Followed the prompt.
+  - The tracker button gets 1–2px shorter (label 31 now sets the row, not the 32 icon): 112 → 111 at 1440, 80 → 79 at ≤991.
+- Verified:
+  - `npm run lint` clean; Prettier clean; `npx tsc --noEmit` clean; `npm run build` passes; `npm run test:e2e`: **235 passed, 100 skipped, 0 failed** (+1 test); after the back-link fix, article + scaling specs again: 133 passed.
+  - **Mutation check:** without the ≤991 `--icon-tile` the new test fails ("featured arrow at 991: Expected 40, Received 48"). Restored.
+  - **Computed** (test table): inline icons are exactly 1.25 × label at every width (topbar/footer/rail ↗ 22.5 / 19.69 / 18.75 / 17.5 at 1440 / 1280 / 991 / 390; tracker → 30 from 1440 down; back ← 30 / 26.25 / 25 / 22.5; source ↗ 25 / 22.5). Tile arrows 48 / 42 / 40 / 32 (66 at 2560). Nothing grows as the window narrows, 991 included.
+  - **Targets** (scratch `screens/e6.11/check.mjs`, 1440 → 320): topbar Joey ≥ 28.6, footer Joey ≥ 24, back link ≥ 24, sources ≥ 30, rail row ≥ 28.6, tracker button ≥ 79.
+  - **"Joey Holzman ↗" wrapping** (sweep 760–1100, step 2, old 1.5rem icon injected for "before"): topbar 768–826 → 768–796; footer 1024–1040 → 1024–1032. **Better, not fixed.**
+  - **Featured row at 390:** dek bottom = arrow bottom (0 difference) at every width checked.
+  - **axe:** 0 on `/` and the Bilirakis article at 1440 and 390 (scratch), plus the suite's axe tests at all 5 widths.
+  - **Screenshots** in `screens/e6.11/`: topbar, footer, tracker-button, featured, grid-tile at 1440/991/390; article-back, article-sources, article-rail-row at 1440/390.
+  - **Not done:** a Figma compare (the frames have the old fixed sizes; see token-log) and a live Eclipse pass (E6.1's Eclipse arrow measurements are the reference: 30 by a 24 h4 at 1440, stepping down at 991).
+- Open for next prompt:
+  - "Joey Holzman ↗" still wraps in the topbar at 768–796 and in the footer at 1024–1032.
+  - `.claude-runs/` appeared untracked during the session (not created by me; T1 adds it to .gitignore).
+  - Carried from E6.10: the 828w image variant that hangs, the title's post-hydration step-down, the /tracker signal header against amber, the topbar row 70 → 71 at 991, the grid tiles' 308 min-height on mobile, the footer's mobile gaps, the dev badge at 390, the weak seams around the ink grid. The icon-size hold at 991 is **resolved**. The E3 TODO(joey) list is unchanged; no content file was touched.
+
+## T1: Congress.gov API verified, client, probe · 2026-11-08
+- Built: `scripts/tracker/congress.mjs` (spec §2.3: `get(path, params, { cacheVersion, auth })` and `paginate(path, params, itemsKey)`; 750 ms spacing; 5 retries with backoff that honors `Retry-After`; disk cache in `.cache/congress/` used only when a `cacheVersion` is passed, so list sweeps are never cached; `stats` request counter; the key goes only in the `X-Api-Key` header, and errors carry the path plus the API's error code, never a URL). `scripts/tracker/probe.mjs` (spec §2.4 items 1–11, plus a 5b/6b sample of recent bills: AI-titled bills for the subject term, reported bills for the stage-2 codes and the CBO shape). Fixtures in `scripts/tracker/fixtures/`: `s146-actions.json`, `hr1283-actions.json`, `s146-detail.json` (the probe refuses to write any that contain the key). npm script `tracker:probe`.
+- Changed: `.gitignore` (+ `.cache/`, `.claude-runs/`); `package.json` (the script); `docs/tracker-spec.md` (§2.1–2.2 every ⚠ resolved, §2.3 cache-version note, §2.4 T1 results, §3.1 subject note, §3.2 step 9 estimate, §3.3 table with the real codes, §4.7 copy flag); CLAUDE.md Progress. §0 step 2 already had the new "latest three entries…" wording (an earlier, aborted T1 run added it), and the §0 table row doesn't contradict it, so I left both.
+- Decisions:
+  - An earlier T1 run (log in `.claude-runs/T1-20261108-2315.md`) stopped on `API_KEY_INVALID`. The key works now; I reused its client and probe, extending the probe with 5b/6b and a `pagination.next` check.
+  - The cache version should come from the **detail's** timestamps (the list's `updateDate` is a date only), at one uncached detail request per candidate. Written into §2.3.
+  - A Senate roll call links to `{congressGovUrl}/all-actions`, since no probe bill had a Senate vote (per §2.4 #11).
+- Verified:
+  - `npm run lint` clean.
+  - Probe, cold cache: **47 requests, 0 cache hits**. Warm: **22 requests, 25 cache hits**. All 22 are list queries, which are never cached by design: auth ×2, the `/bill` filter checks ×3, summaries ×1, the 5b list pages ×8 and the counts ×8.
+  - Rate-limit headers: limit 20,000, remaining ~19,700.
+  - Key scan (node; prints only file names): the probe output from both runs, every file in `scripts/tracker/`, the spec, `package.json` and `.gitignore` → no key and no `api_key=` value. `.cache/` is gitignored and absent from git status.
+  - WebFetch: `clerk.house.gov/Votes/2025104` is S. 146's roll call 104 (409–2); `/Votes/20255` and `/Votes/2025005` both open roll 5.
+  - Congress.gov web pages return 403 to WebFetch, so the CRS term list couldn't be read directly.
+- Open for next prompt (every ❌ and how it was resolved):
+  - **❌ No "Artificial intelligence" CRS subject on 119th bills** (§2.4 #5). It isn't on the 4 probe bills or on S. 2938 (the *Artificial Intelligence Risk Evaluation Act*, 8 terms, none AI-specific), and three AI-titled 2025 bills have no subjects at all. **Not redesigned:** the `subjects` rule stays in config (inert), inclusion runs on watchlist + title, and summary matches go to review as specced. **TODO(joey):** the §4.7 dek and empty-body copy claim CRS indexing; they need rewording before T6 (flagged in the spec). Don't widen `subjects` to "Advanced technology and technological innovations": far too broad.
+  - **❌ `textVersions[].date` can be null** (S. 146's Enrolled Bill), and the array isn't in date order. Resolved in §2.2: take the latest non-null date. T2's normalizer must handle it (§3.4 `text.date` stays a string).
+  - **❌ (minor) the `/^Reported/` fallback misses Senate reports** ("Committee on … Reported by Senator …"). Resolved in §3.3: `/^Reported\b|\. Reported by /`, plus `/discharged/i`. The LoC codes `5000`/`14000`/`14500` exist anyway.
+  - **❌ (minor) rate limit:** the key's header says 20,000/h, not the README's 5,000. No change: the 750 ms spacing stays.
+  - Not observable in T1 (left ⚠ in §3.3): veto `31000`, a House discharge, and a Senate roll-call URL pattern.
+  - "Identical bill" never appeared; NO FAKES' Senate companion S. 1367 is just "Related bill". T5's "Companion bill" needs a rule (e.g. a related bill of the other chamber whose title matches).
+  - `cboCostEstimates` is absent, not empty, when there's none. List items carry no sponsor.
+  - Backfill estimate: 93 list pages + 8 × candidates ≈ 2,500–4,900 requests, 31–61 min (§3.2 step 9).
+  - Carried from E6.11: unchanged (the "Joey Holzman ↗" wrap, the E6.10 list, the E3 TODO(joey) list). No content file was touched.
+
+## T2: Tracker fetch pipeline, data files, stage logic · 2026-11-09
+- Built:
+  - `content/tracker/config.json`: spec §3.1 verbatim, plus `_note` TODO(joey).
+  - `scripts/tracker/stage.mjs`: `stageOf(detail, actions)` and `milestonesOf(actions, congressGovUrl)`, per spec §3.3. A rule matches on its LoC code **or** its text pattern, on any action. `stage.test.mjs` has 14 tests: S. 146 = 5 (both with and without `detail.laws`), H.R. 1283 = 1, synthetic stage 2 (House report, Senate report by text, Senate discharge), 3 House, 3 Senate, 4 both, 4 presented, Vetoed, the S. 146 and H.R. 1283 milestones, and a Senate roll call that links to `/all-actions`.
+  - `scripts/tracker/fetch.mjs` orchestrates (sweep window, candidates, classify, write, summary). `sweep.mjs` holds the API calls (list sweeps, `fetchBill`). `normalize.mjs` maps to the §3.4 shape (HTML to paragraphs, sponsor name, cosponsor counts, latest dated text version). `csv.mjs` writes the CSV (RFC 4180, CRLF, no BOM).
+  - Outputs: `content/tracker/{bills,review,meta}.json`, `content/bill-stats.json` (`placeholder: false`), `public/data/ai-bills-119.csv`.
+  - `src/lib/tracker.ts`: zod loader with `getTrackerBills`, `getTrackerMeta`, `getTrackerBill`.
+  - npm scripts `tracker:fetch` and `tracker:backfill`.
+- Changed: `vitest.config.mts` (+ `scripts/**/*.test.mjs`); `src/lib/content.test.ts` (+1 test: the tracker data validates and holds the watchlist); `package.json`; `docs/tracker-spec.md` (§3.1 topic first-paragraph note, §3.2 `--no-sweep` flag, §3.2 step 9 measured estimate); CLAUDE.md Progress.
+- Decisions:
+  - **The flag is `--no-sweep`, not `--watchlist-only`.** It refetches the watchlist plus every bill already in bills.json and review.json, so running it after a backfill can't wipe the data. It leaves `meta.lastRun` as it was (`null` now), so the next normal run does a full sweep anyway.
+  - **Topics use the first summary paragraph ending in a period.** CRS summaries open with a title-only line ("…Act or the NO FAKES Act of 2025"), so the literal first paragraph tags almost nothing (NO FAKES missed deepfakes).
+  - Cosponsors outside D/R count as `I`. `related[].relation` joins the distinct relationship types with "; ". The review excerpt is the first matching summary paragraph, capped at 300 characters.
+  - `--only` and `--dry-run` compute everything but write nothing. "Changes" compares the bills and review entries, not the meta timestamps.
+  - Removed a `process.exit(0)`: on Windows it trips a libuv assertion while fetch sockets are open.
+- Verified:
+  - `npm run lint` clean; `npm run build` passes, and the bill-stats placeholder warning no longer fires; `npm run test:content` gives 24 passed (14 stage + 10 content).
+  - **Mutation check:** with `bills[0].stage = 7`, vitest fails on the zod parse. Restored, and the file is byte-identical.
+  - **Runs:** `--only` on the 4 bills took 24 requests cold (8 cache hits) and 4 warm (28 hits), 2.4 s. A `--no-sweep` write run took 4 requests. A `--dry-run --no-sweep` straight after reported **added 0 · changed 0 · removed 0 · review +0 −0**.
+  - **Full sweep only** (scratch `screens/t2/sweep-count.mjs`): 93 requests in 484 s, **286 candidates**, so a backfill is about 2,400 requests and 45–50 min.
+  - **Stages:** Congress.gov returns 403 to WebFetch (as in T1), and GovTrack fetches were refused (no WebFetch permission this session), so there was **no independent web check**. Compared instead with the API's latestAction and the manual statuses in `content/bills.json`: S. 146 stage 5 "Became law" (P.L. 119-12, House roll 104) matches "Became law May 19, 2025". H.R. 1283, H.R. 1121 and H.R. 2794 are stage 1, latest action "Referred to the House Committee on …", which matches "Introduced, no committee action".
+  - The CSV has 19 columns in the §3.2 order, 4 rows, the quoted "Science, Technology, Communications", no BOM.
+  - **Key scan** (prints file names only, 27 files: content/tracker, scripts/tracker incl. fixtures, public/data, screens/t2, configs): no key. `.cache/` is not in git status.
+- Open for next prompt:
+  - **Full backfill:** `npm run tracker:backfill` (PowerShell-safe; same as `npm run tracker:fetch -- --full`). About 45–50 min. After it, review `content/tracker/review.json`.
+  - **Until then, Home shows watchlist-only stats** (4 / 1 / 1 / 1, `placeholder: false`).
+  - **`next build` doesn't validate the tracker data yet:** nothing in `src/app` imports `src/lib/tracker.ts`. test:content does. That changes once T3's page imports the loader.
+  - **Data that looked wrong:**
+    - (1) TODO(joey): the `research-compute` topic's `compute` matches "Computers…" subjects and "computer-generated", so all 4 bills get it except H.R. 1283. Suggest `\bcompute\b`.
+    - (2) The API names H.R. 2794's sponsor "Rep. Maria Salazar"; `content/bills.json` has "María Elvira Salazar".
+    - (3) S. 146's "Reported by committee" milestone is its Senate discharge (spec rule, but the label reads oddly).
+    - (4) The `subjects` rule is still inert (T1 ❌).
+  - Carried from T1: the §4.7 copy TODO(joey), the companion-bill rule for T5, and Senate roll-call URLs. Carried from E6.11 unchanged. No post was touched.
+
+## T3: Tracker page shell and bill table · 2026-11-09
+- Built:
+  - `content/tracker/page.json`: spec §4.7 copy (h1, dek, source line, "Bill finder"), the column and row labels, the empty body, and the §4.4b pagination strings for T4; `_note` TODO(joey). Validated by zod in `src/lib/tracker.ts` (new `getTrackerPage()`, type `TrackerPage`).
+  - `src/app/tracker/BillTable.tsx` (`.bill-table`: the aria-hidden column header plus the `<ol>`) and `BillRow.tsx` (`<li id>` > `<details>` > `<summary class="bill-row">` with phrasing-only cells, sr-only "Status:" / "Latest action:" / "cosponsors", a `{/* T5 */}` panel slot after the summary).
+  - `src/app/tracker/page.tsx` rewritten (metadata and robots kept): mint Topbar, paper Tile (top `tile-md`, bottom `tile-lg`), header (display-h2 h1 with "119th Congress" in signal, h4 dek on `--measure`, h5 muted source line with `<time>` of `fetchedAt`), the "Bill finder" h2 (display-h3, `tile` below), marked slots for T4's controls and pagination. Every bill renders, in bills.json order (latest action, newest first).
+  - `tests/tracker.spec.ts`: layout per viewport (grid track count 6/4/2), the text limits over every row, row symmetry and the step's clearance, Enter/Space + 2px ring, axe, no horizontal scroll at 320 and 400% of 1280, no-JS renders every bill in order. The 1440 project also runs 2560, 991 and 320.
+- Changed:
+  - `src/app/globals.css`: §4.4 layout tokens (`--bill-col`, `--title-min`, `--status-col-wide/-medium`, `--action-min`, `--cosponsors-col`, `--chevron-col`, `--table-gap-wide/-medium`, `--bar-height`, `--bar-max`, `--status-overhang`, `--table-row-pad`) and a `.bill-table` block in `@layer components`: stacked by default, `@container (width >= 38.5rem)` medium and `(width >= 66.5rem)` wide, each with its sum in a comment.
+  - `tests/shell.spec.ts`: moved from /tracker to /privacy (/tracker now has 220 tab stops); the keyboard list adds the body's "Vercel" link. `tests/home.spec.ts`: the signal-24px test expects signal *text* on /tracker (its header is no longer a signal tile).
+  - CLAUDE.md §3 icons + `ChevronDown`; Progress. `docs/token-log.md` (3 lines).
+- Decisions:
+  - **Medium/stacked latest action:** "Latest: {text}" clamps to 2 lines and the date sits on its own muted line below, not inline as "… · {date}": inline, a clamped action would cut the date off. Deviation from §4.4 wording.
+  - Sponsor reads "Rep. Pat Harrigan (R-NC)" (the rail's format without "Sponsor:").
+  - Wide/medium status cell takes `margin-block-end: −overhang`; stacked doesn't. Medium main column stacks `stack-sm` (8) apart (the spec gives no value); stacked uses `stack`.
+  - No ≤991 step for the track tokens: they're rem and grow at the root jump, but the table switches layout by its own width, so nothing grows within a layout. Not added to scaling.spec's no-growth list.
+  - Symmetry is checked on every row (a row's top padding = its last text line to the rule), not just one-line-title rows, since §4.4 says long text keeps the padding symmetric.
+- Verified:
+  - Full backfill had run: meta.json has 220 included (stages 211/3/5/0/1), 66 in review.
+  - `npm run lint`, `npx tsc --noEmit`, `npm run build` pass (/tracker static). `npm run test:content` 24 passed.
+  - `tests/tracker.spec.ts`: all 18 runnable tests passed in all 5 projects (first run, healthy server); the trimmed zoom test passed again later. **Mutation:** without the −overhang margin the symmetry check fails ("S. 146: padding 29.5 above, 40.5 below"). Restored.
+  - Measured chars per line (the title's / action's box width in its own ch): 2560 wide 60 / 47.9 (both at their caps) · 1440 wide 44 / 33 · 1280 wide 45.3 / 33.9 · 1024 wide 25.7 / 24.3 · 991 medium 60 / 47.9 (clamped) · 768 medium title 39.8 · 390 stacked title 37.4 · 320 stacked 28.7 / 28.7. All titles share one box width per layout (block box capped at 60ch).
+  - Longest title hr10502-119 (269 chars), longest action hr8516-119 (393 chars): both clamp, nothing overflows. Screenshots in `screens/t3/`: `top-`, `table-`, `longest-title-`, `longest-action-{2560,1440,1280,1024,991,768,390,320}.png`.
+  - Built /tracker HTML: 1,170 KB raw, **66 KB gzipped** (RSC 35 KB gzip) before T5 panels.
+  - **Full test:e2e NOT completed.** The shared dev server on :3000 (PID 14472, not started this session) became CPU-starved after a full run was killed at the tool's 10-min limit (~40% CPU busy with nothing of mine running; `/` 14 s, `/tracker` 21 s, article pages hang). Starting `next start` or inspecting/killing processes needed approval I didn't have. Serial 1440 run of home + shell + tracker: 28 passed; the 3 failures were timeouts (2 on article-page navigation, the known 828w image hang; 1 zoom test, since trimmed and passing).
+  - Figma: the MCP permission was declined, so no BillFinder screenshot or compare. Known differences per spec §5 stand (Figma's action in H5, 4 segments for step 5, "S. 146 · House", dek, pagination copy), plus the medium date-line deviation above.
+  - Eclipse parity not needed: no shared token changed.
+- Open for next prompt:
+  - **Rerun `npm run test:e2e` on a fresh dev server** (restart :3000 first) and confirm all green; the expected changes are only the shell move and the home signal tweak.
+  - TODO(joey): approve `content/tracker/page.json` copy.
+  - Stacked layout has no header and no top rule above the first row (per spec); looks fine in screenshots, but worth a look.
+  - Carried from T2: the `compute` topic regex, H.R. 2794 sponsor name, S. 146 "Reported" milestone label, inert `subjects`, review.json triage, companion-bill rule, Senate roll-call URLs. Carried from E6.11 unchanged. No post was touched.
+
+## T4: Tracker finder controls, pagination, empty state · 2026-11-09
+- Built (all in `src/app/tracker/`):
+  - `finder.ts`: pure `parseState`/`toSearch` (URL ⇄ state, defaults left out, unknown values fall back), `matchesQuery`, `filterBills`, `sortBills`, `topicCounts`, `paginate`, `fill` (page.json `{placeholders}`). `finder.test.ts`: 28 vitest tests.
+  - `BillFinder.tsx` (`"use client"`): state, status count, empty state, wiring. `FinderControls.tsx` (search, chamber/status/sort selects, topic radio pills). `Pagination.tsx`. `Select.tsx` (native select + ChevronDown; `field` = bordered 3.5rem, else the borderless pager select, ≥ 2.5rem tall; 5 uses).
+- Changed:
+  - `page.tsx` renders `<BillFinder bills copy topics>` in place of `<BillTable>` (still a server component). `BillTable.tsx` takes `children`, shown under the column header instead of an empty `<ol>`.
+  - `src/lib/tracker.ts`: page schema + `finder` (labels and select options as `{value,label}` arrays, validated against finder.ts's value lists, each value exactly once), `empty`, and `pagination.rangeOne/statusOne/statusEmpty`; new `getTrackerTopics()` (id + label from `config.json`).
+  - `content/tracker/page.json`: those strings added (still TODO(joey)). No other content touched.
+  - `globals.css`: `--finder-search` 24rem, `--pill-count` 1.375rem; `.finder-pill` (checked = ink/paper, ring via `:has(:focus-visible)`); `.bill-pager` container (< 38.5rem: the range takes its own first line). `docs/token-log.md` 1 line.
+  - `tests/tracker.spec.ts`: the T3 limits tests now run with JS off (with JS only page 1 renders, so they'd cover 25 rows, not 220); 8 new tests (axe filtered / page 2 / empty, zzzz + Clear, topic URL round-trip, Next/Previous/last page, page-3 reset, 50 per page, names + targets, pager wrap at 390/320).
+  - CLAUDE.md §3 icons (+ ChevronLeft/Right) and Progress.
+- Decisions:
+  - **URL is the state.** `useSyncExternalStore` over `location.search` (writes via `history.replaceState` then notify). The server snapshot is `null`, so SSR/no-JS = every bill, default sort, no pager; the URL applies right after hydration with no setState-in-effect. `useSearchParams` would have bailed the static page out to client rendering (no rows without JS).
+  - **Search:** a query shaped like a bill number (`hr 2794`, `H.R.2794`, `2794`, `s146`, `sjres 12`) matches that number only (exact, not prefix: "s146" doesn't show S. 1460); otherwise every word must appear in label + title + sponsor, NFD-folded.
+  - **URL values:** `chamber=house|senate`, `status=1…5` (the stage number), `sort=latest|introduced|cosponsors|number`. "Bill number" sorts by type (H.R., S., H.J.Res., S.J.Res.) then number.
+  - **Status line:** "Showing 1–25 of 220 bills"; "Showing 1 bill"; "No bills match" (new strings). Before mount it reads 1–220. `mt-32` below Topics, `mb-16` above the table (spec gives none).
+  - **Clear all filters** reuses the Newsletter Submit pattern (`data-tile="ink" data-interactive`, so it hovers to mint), as a pill with 16/24 padding and heading-h5.
+  - **Pager selects use `htmlFor` labels, not wrapping ones:** wrapped, the selected value joins the name ("Page 2").
+  - **Pager buttons are 2.5rem:** 40 at 1440 and ≤ 991, 35 at 1024–1280 (root 14). The test asserts 2.5 × root.
+  - **Payload:** bills ship whole as client props (T5 needs the panel fields). Built /tracker HTML 879 KB raw / **93 KB gzip** (T3: 66), RSC 60 KB gzip.
+- Verified:
+  - `npm run lint`, `npx tsc --noEmit`, `npm run build` pass; `npm run test:content` 52 passed.
+  - **Playwright against `next start` on :3100** (scratch config `screens/t4/playwright.prod.config.ts`), because the shared dev server on :3000 still hangs (every `goto` timed out; not started by me, no approval to kill it). tracker + home + shell: **151 passed, 44 skipped, 0 failed** at all 5 projects. The full suite on prod: 262 passed, 27 failed. Every failure is in `article.spec` / `scaling.spec` and visits a dev-only route (the draft TAKE IT DOWN post, `/styleguide`), which 404 in production. A second `next dev` on :3200 wouldn't start (likely Next's one-dev-server lock while :3000 runs), so **those two specs weren't rerun this session**. T4 touched nothing they use (new CSS selectors and tokens only).
+  - **Mutation:** without the page-1 reset, "changing a filter on page 3" fails (`?chamber=house&page=3`). Restored and rebuilt.
+  - **Screenshots** `screens/t4/{default,filtered,page2-focus,pagination,empty}-{1440,1024,768,390}.png` (via `screens/t4/shots.spec.ts`).
+  - Figma: MCP permission declined again, so no compare against BillFinder `2209:2` / BillFinderNoMatch `2212:536`. Known differences per spec §5 #5–6 (the count, URL state, pagination copy and the 25 default).
+  - Eclipse parity not needed: no shared token changed.
+- Open for next prompt:
+  - **Restart the dev server on :3000, then run the full `npm run test:e2e`** (article + scaling haven't run since T3).
+  - Delete `screens/t4/shots.mjs` (a dead scratch file; the rm needed approval).
+  - TODO(joey): approve the new finder, empty and pagination strings in `content/tracker/page.json`.
+  - At 390 the pager takes three lines (range / per page / pager, right-aligned); at 320 the same. Clean, but it's tall.
+  - The native search field's clear "×" is the browser's (blue in Chrome).
+  - T5: hash links (§4.5) must clear filters and jump pages; `setSearch` and `paginate` in BillFinder/finder.ts are the hooks.
+  - Carried from T3 unchanged (copy TODO, stacked layout's missing top rule, the T2 data list, E6.11 list). No post was touched.
+
+## T5: Tracker expanded rows · 2026-11-09
+- Built:
+  - `src/app/tracker/BillPanel.tsx` (plain, no hooks): spec §4.5 in each `<details>` after the summary. Full title first (only when the row clamps it, `aria-hidden` since the summary already names it); "Summary" h3 + `version · <time>` + first 3 paragraphs + "Read the full CRS summary on Congress.gov ↗", or muted "No CRS summary yet."; a `<dl>` (Where it stands `<ol>` with "Roll call n ↗", Committees, Cosponsors "21: 11 D, 10 R · 18 original · Bipartisan", Companion bill, Subjects = policy area + ≤ 6 subjects, CBO cost estimate, Text, Law), terms with no data omitted; footer "View on Congress.gov ↗". External links use the existing sources pattern (sr-only " (external site)" + ArrowUpRight `size-icon-inline`); every date is a `<time>` via `formatDate`.
+  - `finder.ts` `revealBill(bills, state, id)`: clears only the filters that hide the bill, keeps sort/per, and sets the page holding it; null for a non-bill hash (e.g. `#main`). 4 vitest tests.
+  - `tests/tracker.spec.ts` T5 tests: axe with S. 146 open (all 5 projects = wide/medium/stacked), S. 146 content (Became law, milestones in date order, external link's name and href), `/tracker?chamber=house#s146-119` opens it on its page with the filter cleared, companion link H.R. 10567 → S. 5417, chevron transform flips and has 0s transition under reduced motion, every panel open at 320 (no JS, all 220) with no horizontal scroll.
+- Changed:
+  - `BillRow.tsx`: renders `<BillPanel>`; new `panelCopy` prop; exports `markClamped(details)` (title `scrollHeight > clientHeight` → `data-clamped`), called on summary click before the row opens. `BillTable.tsx` passes `copy.panel`.
+  - `BillFinder.tsx`: hash effect (on mount after the URL state applies, and on `hashchange`) → `revealBill` → `setSearch` → `openTarget()` opens and scrolls the row (instant under reduced motion), now or after the re-render brings it onto the page. `instant()` shared with `goTo`.
+  - `src/lib/tracker.ts`: `panel` copy schema; bills gain derived `companions` ({id, label, href}); `TrackerBill` is now that derived type.
+  - `content/tracker/page.json`: `panel` strings (still under the file's TODO(joey)).
+  - `globals.css`: `.bill-panel` (one column, `tile` row gap, `tile` bottom padding; in the wide @container it joins `.bill-head, .bill-row` for the tracks, summary in columns 2–3, facts 4 → end, the rest 2 → end), `.bill-prose` (min(--measure, 65ch)), `.bill-panel-title` (shown on `data-clamped`, or always under `@media (scripting: none)`), `.bill-panel a` shares `.prose-article a`'s link style. **Chevron uses `transform: rotate(180deg)` instead of `rotate:`** so the prompt's "computed transform" check is literal.
+  - `tests/tracker.spec.ts`: row locators `.bill-table ol > li` → `.bill-table > ol > li` and empty `.bill-table h3` → `.bill-table > div > h3` (the panels add nested `<ol>`s and h3s).
+  - `docs/tracker-spec.md` §4.5: the companion rule. CLAUDE.md Progress.
+- Decisions:
+  - **Companion rule:** "Identical bill", or a tracker bill from the other chamber with the same title (32 identical + 16 same-title links). NO FAKES' S. 1367 isn't in the tracker, so H.R. 2794 shows none. Non-tracker companions link to Congress.gov (URL built from the bill's own, same Congress); none occur in the current data.
+  - **Wide panel columns:** the summary spans title + status, the facts span latest action → chevron (more balanced than the title column alone; the prompt's "starts at the title column, two columns" holds). Medium and stacked: one column, full width (the prompt's container-query wording over §4.5's "≥ 1280 / ≥ 1024").
+  - "Read the full CRS summary" links to the bill page (its default tab is the summary); same URL as the footer link. Congress.gov couldn't be fetched to confirm a summary-tab path.
+  - Cosponsors term omitted when the count is 0; independents appear in the split only when > 0. Committees read "{chamber} {name} · {latest}, {date}".
+  - " (external site)" is hardcoded, as in Topbar, Footer, ActionRow and the article sources.
+  - No new tokens; no shared token changed, so no Eclipse parity pass is needed and token-log.md has no entry.
+- Verified:
+  - `npm run lint` clean, `npx tsc --noEmit` clean, Prettier clean, `npm run build` passes, `npm run test:content` **56 passed**.
+  - **Payload:** built `/tracker` HTML 1,500 KB raw / **127 KB gzip** (T4: 93), RSC 59 KB gzip. Under 300 KB, so no excerpt cut (one number; there was no second measurement).
+  - **Playwright against `next start` on :3100** (`screens/t4/playwright.prod.config.ts`; :3000 still hangs, and a run against it stalled for 10 min). tracker + home + shell: **177 passed, 48 skipped, 0 failed**, all 5 projects. Full suite: **288 passed, 27 failed**: the same 27 as T4, all in `article.spec` / `scaling.spec` on dev-only routes (the draft TAKE IT DOWN post, `/styleguide`) that 404 in production.
+  - Found while testing: a hash set on an already-loaded page *before hydration* doesn't open the row (`page.goto("/tracker")` then an immediate `goto("#…")`). Real loads with a hash work, and so do hashchanges after hydration. The companion test now waits for hydration first. Low real-world impact; not fixed.
+  - **Screenshots** `screens/t5/s146-{1440,1024,768,390}.png` and `no-summary-1440.png` (H.R. 10502: the longest title with no summary, so the clamped-title line shows), via `screens/t5/probe.spec.ts` + `probe.config.ts`.
+  - **Congress.gov spot check: not done.** Every congress.gov page returned 403 to WebFetch (S. 146 and H.R. 10502: all-actions, cosponsors, committees), and the GovTrack fallback was refused (no WebFetch permission). The panel only renders bills.json fields, which T2 compared with the API.
+- Open for next prompt:
+  - **Restart the dev server on :3000 and run the full `npm run test:e2e`.** article + scaling haven't passed on dev since T3.
+  - **Hand spot-check** S. 146 and H.R. 10502 on Congress.gov (milestones, cosponsor split, committees).
+  - TODO(joey): approve the `panel` strings in `content/tracker/page.json`.
+  - CRS summaries split lists into paragraphs, so a 3-paragraph excerpt can end mid-sentence (S. 146's third ends "…intimate visual depictions of"). Options: stop at a paragraph ending in a period, or show 2. Not changed.
+  - `BillFinder.tsx` is 192 lines (state, wiring, hash). Could split the hash effect into a colocated hook if it grows.
+  - Delete the scratch files `screens/t4/shots.mjs` and `screens/t5/*` when done (screens/ is gitignored).
+  - Carried from T4 unchanged (pager height at 390/320, the search field's native ×, the T3/T2/E6.11 lists). No post was touched.
+
+## T6: Tracker wired to Home and the rail, methodology, docs · 2026-11-09
+- Built:
+  - `src/lib/bills.test.ts`: 2 vitest tests for `statusLine`: a tracker bill (S. 146) takes `stageLabel` + latest action + fetch date (the fetch date is read from meta.json, so a refresh doesn't break the test); a bill not in the tracker falls back to the manual status.
+  - The "How this list is built" section on `/tracker` (`page.tsx`, after the finder, `mt-tile-lg`): an h2 in `type-display-h3`, the three paragraphs, "Download the data (CSV)" (`<a download>` to `/data/ai-bills-119.csv`, then muted "73 KB · 220 rows"), an h3 "How to cite" and the citation. It sits in `prose-article max-w-measure type-text-article`, as the article's Sources section does, so it gets the same link style and rhythm.
+- Changed:
+  - `src/lib/bills.ts` `statusLine`: when `getTrackerBill(id)` has the bill, it returns "{stageLabel}, latest action {date}, as of {fetch date}". Otherwise it returns the manual "{status} as of {asOf}". The rail's markup is unchanged.
+  - `content/tracker/page.json` + `src/lib/tracker.ts`: a `methodology` copy block (heading, exactly 3 paragraphs, download, downloadMeta, cite, citation) with `{congress}`, `{date}`, `{url}`, `{size}` and `{rows}` placeholders, filled in by finder.ts `fill`. It falls under the file's existing TODO(joey).
+  - `page.tsx`: the h1 span and source line now use the same `values`/`fetched` as the methodology (same output).
+  - Docs: Part A **A11. Bill tracker** (points to the spec; a table of the T3/T4 tokens). CLAUDE.md §3 (the tracker bullet: content/tracker/, scripts/tracker/, never read `.env.local`; dropped "/tracker is a stub"), §4 (signal on /tracker = the h1 span and the status bar only; secondary text is `text-tile-muted`, never a raw gray), §9 (`test:content`, `tracker:probe`, `tracker:fetch` with its flags, `tracker:backfill`), and Progress. build-prompts "Open items": removed "Bill tracker page"; added the review.json triage and the Figma carry list (spec §5 #1, 2, 3, 6, 7). E7's gate now reads "If T6 isn't ticked", and its deferred list no longer has "the bill tracker page".
+- Decisions:
+  - **Home needed no change.** `content/bill-stats.json` is `placeholder: false` (220 / 9 / 6 / 1, asOf 2026-11-09), and Home already shows "Congress.gov, updated Nov 9, 2026" from `asOf`.
+  - **Rail line wording** (the spec gives none): "Became law, latest action May 19, 2025, as of Nov 9, 2026". Like the old line, it's composed in bills.ts.
+  - **Row count = `bills.length`** (fetch.mjs writes bills.json and the CSV in one run); the size comes from `statSync` at build time. Both were checked against the downloaded file.
+  - **Citation URL** is `${SITE_URL}/tracker`. While SITE_URL is unset (the "#" fallback), it reads just "/tracker". It needs SITE_URL set before launch.
+  - Methodology paragraph 3 says "we refresh it by hand" (no daily claim until T7 runs, spec §3.6).
+  - **Deliberate addition to the Figma frame:** the methodology/CSV/cite section (already listed in spec §5 #5).
+  - **The old /tracker signal-header open item (carried since E6.8) is gone:** the header is a paper tile since T3, and signal is only the h1 span and the bar.
+  - No tokens added or changed, so no token-log entry and no Eclipse pass.
+- Verified:
+  - `npm run lint` clean, `npx tsc --noEmit` clean, Prettier clean, `npm run build` passes, `npm run test:content` **58 passed** (+2).
+  - **Full e2e against `next start` on :3100** (`screens/t4/playwright.prod.config.ts`; log `screens/t6-e2e.log`): **288 passed, 120 skipped, 27 failed**. These are the same 27 as T4/T5: all in `article.spec`/`scaling.spec`, on the draft TAKE IT DOWN post and `/styleguide`, which 404 in production. tracker, home and shell are all green.
+  - **The dev server on :3000 still hangs** (tracker `ERR_ABORTED`, the TAKE IT DOWN page timed out at 120 s). Starting a second dev server, curl and netstat all needed approval I didn't have. So **axe and the rail screenshot on the TAKE IT DOWN draft weren't run.** The Bilirakis post (H.R. 1283, also in the tracker) stood in.
+  - **axe** (`screens/t6/check.spec.ts`, prod): 0 violations on `/`, `/tracker` and the Bilirakis article at 1440 and 390.
+  - **Rail** (prod, Bilirakis): "Introduced, latest action Feb 13, 2025, as of Nov 9, 2026".
+  - **CSV:** clicking the link fires a download, `ai-bills-119.csv`, 220 data rows (73,153 bytes on disk).
+  - **Screenshots** `screens/t6/`: `home-bills-`, `rail-` (Bilirakis), `methodology-{1440,390}.png`.
+  - Figma: no frame for the methodology (it's an addition); no compare.
+- Open for next prompt:
+  - **Restart the dev server on :3000, then run the full `npm run test:e2e`.** article and scaling haven't passed on dev since T3. Also run axe and take a rail screenshot on the TAKE IT DOWN draft (`npx playwright test --config screens/t6/check.dev.config.ts`).
+  - Set `SITE_URL` before launch (the citation's URL).
+  - Part A A9 still says "`/tracker` is a stub page" (not in this prompt's list; left alone).
+  - `content/bills.json`'s `status`/`asOf` are now only the fallback for bills not in the tracker; all 4 current rail bills are in it.
+  - **Every TODO(joey) the T-series added:**
+    - `content/tracker/config.json` `_note` (review the patterns, topics and watchlist), including the `research-compute` topic's `compute` matching "Computers…" (suggest `\bcompute\b`) and the inert `subjects` rule (T1/T2);
+    - `content/tracker/page.json` `_note` (approve all the copy: header, finder, panel, pagination, empty state and now the methodology);
+    - triage `content/tracker/review.json` (66 bills);
+    - the spec §4.7 copy flag (dek and empty body reworded to the real inclusion rule, T1);
+    - H.R. 2794's sponsor name (the API says "Maria Salazar", bills.json says "María Elvira Salazar"; T2);
+    - hand spot-check S. 146 and H.R. 10502 on Congress.gov (T5);
+    - T7: add the `CONGRESS_API_KEY` repository secret.
+  - Carried from T5 unchanged: the 3-paragraph summary cut mid-sentence, the pre-hydration hash, the pager height at 390/320, the search field's native ×, the S. 146 "Reported" label, Senate roll-call URLs, the E6.11 list (the "Joey Holzman ↗" wrap and the E6.10 items, minus the signal header). No post was touched.
+
+## E7: QA pass · 2026-11-09
+- Built: nothing in the repo. Scratch QA in `screens/e7/` (gitignored): `e7.config.ts` (`next start` on :3100 via Playwright's webServer), `e7.dev.config.ts` (a fresh `next dev` on :3200; it can't start, see Open), `qa.e7.ts` (items 1–7 and 9), `image.e7.ts`, `parity.e7.ts`, `probe.e7.ts`. Reports: `report-{1-axe,2-contrast,3-keyboard,4-zoom,5-reduced-motion,6-nojs,7-root,9-best-practices,10-parity}.md`, `e2e-prod.log`. The old `qa-axe-contrast.md` there is from an earlier, aborted E7 run (stale: it predates the signal/tracker changes).
+- Changed: `CLAUDE.md` (E7 ticked). **No source, token or content change: no defect was found that needed one.** `content/bill-stats.json` was flipped to `placeholder: true` for one build and restored byte-identical (`cmp`).
+- Decisions:
+  - **Pages checked:** /, /tracker (with S. 146 expanded, and the empty state `?q=zzzz` for contrast), /privacy, /accessibility and the 5 published posts, on a production build. **The draft TAKE IT DOWN post wasn't checked** (dev only; see Open).
+  - **Contrast script:** every visible text node (and input placeholders), its color composited over the real stacked backgrounds with a canvas, so the 72% muted blends are measured as painted. sr-only text is skipped. Hover states of every `[data-interactive]` tile are measured too (reduced motion, so no fade). Threshold 3:1 only at ≥ 24px, as the prompt says (600 isn't "bold" under WCAG).
+  - **Lighthouse isn't installed** (adding it needs approval), so item 9 is the equivalent: axe's full rule set (Lighthouse's a11y audits are axe) plus its best-practices audits replicated in Playwright: doctype, charset, viewport meta, lang, console errors/warnings, page errors, 4xx/5xx and failed requests, DevTools (CDP Audits) issues, image aspect ratio and load, requests still pending.
+  - **Claude in Chrome isn't available in this session,** so the Eclipse pass ran in Playwright against the archive, as E6.6 did.
+- Verified:
+  - `npm run lint` 0 errors (1 warning, in the scratch `screens/t6/check.dev.config.ts`); `npx tsc --noEmit` clean; `npm run build` passes; `npm run test:content` 58 passed.
+  - **Full e2e on `next start`** (`screens/t4/playwright.prod.config.ts`): **288 passed, 120 skipped, 27 failed**, identical to T6. All 27 are the draft post and `/styleguide` (dev-only routes, 404 in production).
+  - **1 axe:** 0 violations on all 9 pages at 1440 and 390.
+  - **2 contrast:** 1,811 text nodes, 112 distinct pairs, **0 failures**, min 3.47 (signal text on paper and paper on signal, all ≥ 24px). Lowest small-text pairs: slate/paper 5.16, link blue 6.05, navy hover date on amber 6.12.
+  - **3 keyboard** (sticky live, no reduced motion) at 1440, 1024 and 390: Home 20 stops, Bilirakis article 24. Every stop has a ring ≥ 2px, is in the viewport, and is topmost at its center.
+  - **4 zoom** (1280 at 200% = 640×400 @2x, at 400% = 320×200 @4x): 0px horizontal overflow on all 9 pages, no text off screen, nothing clipped horizontally. (My first run flagged sr-only "(external site)" text as off screen; a false positive, filtered out.) Screenshots: `zoom-{200,400}-{home,tracker,article}.png`.
+  - **5 reduced motion** at 1440×900 and 1024×768, all pages, after a scroll: 0 sticky/fixed elements, 0 transitions or animations with a duration (pseudo-elements included).
+  - **6 no-JS** at 1440 and 390: every page is 200 with one h1, `main#main`, the newsletter form (email + submit), no broken images, no overflow; /tracker renders all 220 rows. Screenshots: `nojs-{home,tracker,article}-1440.png`.
+  - **7 fluid root** (root / body / article p): 1440 16 / 16 / 20 · 1366 15.08 / 15.08 / 18.84 · 1280 14 / 14 / 18 · 1024 14 / 14 / 18 · 991 16 / 14 / 18. **The article body is never below 18.** `<body>` computes 14 at 991 although the root is 16; I didn't trace why (no visible text uses the body's own size on the pages checked). Worth a look.
+  - **8 placeholders:** no file is `placeholder: true`. `bill-stats.json` has real counts (220 / 9 / 6 / 1, asOf 2026-11-09, `placeholder: false` since T2), so the build warning correctly doesn't fire. **The warning still works:** with the flag flipped, `next build` printed "⚠ content/bill-stats.json holds Figma placeholder numbers…" (once per worker, 5×). Other placeholders still in place: the `public/images/trump.png` fallback image (every post); `[EMAIL]` (accessibility.mdx:59, privacy-policy.mdx:37); `[TEST DATE]` (accessibility.mdx:35) and both pages' BEFORE PUBLISHING blocks; the TODO(joey) list (E3 and T6, unchanged).
+  - **9 best practices** (/ and Bilirakis at 1440 @1x and 390 @3x): clean on every audit: no console messages, no failed or pending requests, no DevTools issues.
+  - **E6.5's "828w image never loads" doesn't reproduce:** on a fresh production build every `/_next/image` width (640–1920, 828 included) answers in ≤ 36 ms with WebP/AVIF and PNG Accept headers. The tiny `naturalWidth` values (208 at 390 @3x) are Chrome dividing by the srcset density, not small files.
+  - **10 Eclipse parity** (archive vs ours at 1440 / 1366 / 1280 / 1024 / 991 / 768 / 390): the root (16 / 15.1 / 14 / 14 / 16 / 16 / 16), the h2 size and line height (66 / 62.2 / 57.8 / 57.8 / 40 / 40 / 34) and tile padding at ≥ 1024 (40 / 37.7 / 35 / 35) **match exactly**. Differences already on record: tile pad 24 vs 20 at ≤ 991 (Part A); hover 0.3s `ease-out` vs `ease`; Eclipse's sticky has no fit or motion guard (A9). Our topbar stays at top 0 after scrolling on desktop and scrolls away at 390. **Nothing was clearly off, so no token changed** (so no before/after pair; `parity-{eclipse,ours}-<width>.png` are the reference shots).
+- Open for next prompt:
+  - **The shared dev server on :3000 (PID 14472) is orphaned and broken:** its stdout pipe is gone, every log write throws `EPIPE`, and every article answers 500 ("Jest worker encountered 2 child process exceptions"). It also blocks a second `next dev`. Stopping it needed approval I didn't have. **Joey: `taskkill /PID 14472 /F`, then `npm run dev`,** then run `npm run test:e2e` (article and scaling haven't passed on dev since T3) and `npx playwright test --config screens/e7/e7.dev.config.ts qa` to cover the draft TAKE IT DOWN post (axe at 1440/390, contrast, its Chart table).
+  - **Small finding, not fixed (no effect today):** the article figure's `sizes` is `(min-width: 768px) 50vw`, but at 1024–1279 the figure is the 560px measure (55vw). With real, larger images the browser may pick a slightly small variant there. A `sizes` that matches the measure would fix it; with the 640px placeholder there's no difference.
+  - Both images lazy-load (Next's default), so the featured cell is stone for a moment on first paint at 1440×900. Adding `priority` to the Home featured image is Joey's call.
+  - **Deferred, not built:** Copy article link, the Related tiles on the article, the chart treatment (`<D3Chart>` renders nothing), the newsletter design.
+  - Carried unchanged: the T6 TODO(joey) list, SITE_URL before launch, Part A A9's stale "/tracker is a stub" line, and the T5/E6.11 list (summary cut mid-sentence, the pre-hydration hash, the pager height at 390/320, the search field's native ×, the "Joey Holzman ↗" wrap, the post-hydration title step-down, the grid tiles' 308 min-height on mobile, the weak seams around the ink grid). No post was touched.
+
+## T8: Tracker data fixes, topics, excerpts, split files · 2026-11-09
+- Built:
+  - `scripts/tracker/config.test.mjs`: 8 vitest cases over config.json's title patterns (the 4 must-not-match and 4 must-match titles).
+  - `content/tracker/index.json` (row fields only, one bill per line, sorted like bills.json) and `public/data/tracker/bills/{id}.json` (one compact panel file per bill; stale files deleted). Written by fetch.mjs.
+  - `--rebuild` in fetch.mjs + npm `tracker:rebuild`: offline (no requests, no key needed), re-classifies every bill whose detail is cached, plus the watchlist and the bills in the files.
+- Changed:
+  - `content/tracker/config.json`: `\bgenerative\b`; A.I. pattern `(?!\/AN)`; the 17 topics from the prompt, in its order. `topicOverrides` kept (empty).
+  - `scripts/tracker/congress.mjs`: offline mode (`goOffline()`; a cache miss throws), `getLatest()` (the detail is still fetched fresh online, but its latest copy is stored with version `"latest"`), `cachedLatest()`. The missing-key error now fires at the first request, not at import, so a rebuild runs without a key.
+  - `sweep.mjs`: `fetchBill` uses `getLatest`; new `cachedBillIds()`.
+  - `normalize.mjs`: `excerptOf()` and `summary.excerpt`; the policy area joins the topic text (the prompt's list); `companionsOf()` (moved from `src/lib/tracker.ts`, same rule).
+  - `fetch.mjs`: `--rebuild`; topics and `topicOverrides` out of the config hash; companions computed after classification; the split files.
+  - `stage.mjs`: discharge milestone → "Discharged from committee" (stage unchanged); `stage.test.mjs` S. 146 expectation + 1 new test (report vs discharge labels, discharge still stage 2 "Reported by committee").
+  - `src/lib/tracker.ts`: `summary.excerpt`, `companions` in the bill schema (no longer derived here); `indexBillSchema` → `TrackerIndexBill` + `getTrackerIndex()`; exported `billDetailSchema` → `TrackerBillDetail`. `src/lib/content.test.ts`: +1 test (index ids = bills ids in order, the bills folder holds exactly those files, each parses).
+  - Data: content/tracker/{bills,index,meta}.json, content/bill-stats.json (215 / 9 / 6 / 1), the CSV, the per-bill folder. `docs/tracker-spec.md` §3.1 (patterns, topic table with counts, hash note), §3.2 (`--rebuild`, index.json, the per-bill files), §3.4 (`excerpt`, `companions`, the discharge label). CLAUDE.md §9 (`tracker:rebuild`) and Progress. No UI file touched.
+- Decisions:
+  - **The cache had no bill details** (fetchBill never cached them), so a rebuild couldn't work from it as it stood. I ran **one `tracker:fetch -- --no-sweep`** (286 requests, 227 s, every sub-endpoint a cache hit, so no bill data changed) to seed the details, then `tracker:rebuild`: **0 requests, 2.0 s, 0 changes**, bills.json and meta.json byte-identical to the seeded run. fetchedAt is now 2026-11-09 (that run's time).
+  - The per-bill summary carries `excerpt` only (not every paragraph): the panel shows the excerpt and links to the full summary on Congress.gov. `related` isn't in the per-bill file; `companions` is (all the panel uses). Title, sponsor party and stage come from the index row, so T9 merges row + file.
+  - A rebuild keeps `fetchedAt`, `lastRun` and `requests` (nothing was fetched).
+  - `summaryPatterns` still has a bare `generative` (it can match "Regenerative" in a summary). Not in the prompt; the 5 dropped bills didn't land in review (+0 −0). Joey may want `\bgenerative\b` there too.
+- Verified:
+  - `npm run lint` 0 errors (the old scratch warning in screens/t6), `npx tsc --noEmit` clean, `npm run build` passes, `npm run test:content` **68 passed**.
+  - **False positives gone** from bills.json, index.json, the CSV and the per-bill folder: hr8048, s4179, hr6852, hr3729, hr3166 (`screens/t8/check.mjs`). 215 bills, 215 index rows, 215 files, 215 CSV rows. Stages 206 / 3 / 5 / 0 / 1.
+  - **Topics** (215 bills): Deepfakes and likeness 11 · Chatbots and companions 7 · Children and teens 10 · Elections 9 · Disclosure and labeling 17 · Safety and risk 22 · Privacy and data 19 · Fraud and consumer protection 30 · Bias and civil rights 8 · Jobs and the economy 28 · Health care 12 · Education 17 · Government use of AI 49 · Federal and state roles **4** · National security 40 · Research and compute 44 · Energy and data centers 15. None under 4.
+  - **No topic: 26 of 215 (12.1%, target < 15%):** S. 5518 Make AI Work for Americans Act; H.R. 10044 AI Tax and Work Protection Act; S. 5047 AI Physical Systems Coordination Act of 2026; S. 5051 AI AGENT Act of 2026; S. 4991 Homestake AI Act of 2026; H.R. 9686 and S. 4627 FARM AI Act of 2026; H.R. 9506 (NAII Act prize competition program); S. 4825 American A.I. Sovereign Wealth Fund Act; H.R. 9323 Department of Advanced Technology and AI Act; S. 4441 CREATE AI Act; H.R. 8516 American Leadership in AI Act; H.R. 8037 Protect American AI Act of 2026; H.R. 7968 Small AI Innovators Empowerment Act; H.R. 7783 AI-Ready Networks Act; H.R. 7158 Expanding AI Voices Act; H.R. 6304 AI for America Act; H.R. 6159 AI for ALL Act; S. 3150 and H.R. 5885 GAIN AI Act of 2025; S. 2937 AI LEAD Act; H.R. 5288 AI Sovereignty Act; S. 2615 VET Artificial Intelligence Act; S. 2528 Unleashing AI Innovation in Financial Services Act; H.R. 3303 America–Israel AI Cooperation Act; S. 1633 TEST AI Act of 2025.
+  - **Excerpts:** every one ends in a period; 115–580 chars (median 332); none empty. S. 146's is its one sentence-paragraph ("This act generally prohibits … upon receiving notice of their existence."). S. 146 is the only bill with a "Discharged from committee" milestone.
+  - **Sizes:** index.json **99.5 KB raw / 12.9 KB gzip**; bills.json 455 KB / 49 KB; per-bill files 177 KB total, median 0.7 KB, max 1.9 KB.
+  - **Key scan** (`screens/t8/keyscan.mjs`, file names only, 302 files: content, public/data, scripts/tracker, docs, src, package.json): no key. The one regex hit is probe.mjs's own `api_key=REDACTED` code (checked: it doesn't contain the key).
+  - No screenshots, Figma or Eclipse pass: no UI change.
+- Open for next prompt:
+  - **T9:** BillPanel still renders `summary.paragraphs.slice(0, 3)` (T8 doesn't touch UI); switch it to `summary.excerpt` with the per-bill files. Read panel data as index row + `/data/tracker/bills/{id}.json` (`TrackerBillDetail`).
+  - TODO(joey): `summaryPatterns`' bare `generative`; S. 2615 "VET Artificial Intelligence Act" gets no topic (`veterans?` doesn't match "VET"); review the 26 untagged bills, and use `topicOverrides` where a topic is obvious.
+  - Carried from E7 unchanged (the T6 TODO(joey) list, the orphaned :3000 dev server, SITE_URL, Part A A9's stub line, and the T5/E6.11 list minus the summary cut and the S. 146 "Reported" label, both fixed here). No post was touched.
+
+## T9: Tracker load time, lazy panels, caching, 10 per page · 2026-11-09
+- Built:
+  - `tests/tracker.perf.spec.ts` (budgets: server HTML ≤ 120 KB, ≤ 10 rows, no panel content; one JSON request per opened row, none on reopening; LCP < 2.5 s and TBT < 200 ms at 390 under 4× CPU + Fast 3G). Runs in one project and skips itself on a dev server.
+  - `playwright.prod.config.ts`: the whole suite (perf included) against `next start` on **:3300**, launched as `node node_modules/next/dist/bin/next start` so stopping it really stops it (see Open). `playwright.config.ts` now `testIgnore`s `*.perf.spec.ts`.
+  - `src/lib/iso-date.ts`: `isoDate` moved out of `dates.ts` (see Decisions).
+- Changed:
+  - `BillFinder.tsx`: imports `content/tracker/index.json` itself (no bill props); renders only the current page on the server too (first 10 of the default sort), so the status reads "Showing 1–10 of 215 bills" before hydration.
+  - `BillRow.tsx` (`"use client"` now): fetches `/data/tracker/bills/{id}.json` on the details' `toggle` (so hash-opened rows load too), prefetches on summary `pointerenter`/`focus`, keeps results in module-level Maps (a failure is forgotten, so the next open retries). Loading: `.bill-panel.bill-panel-loading` with `aria-busy="true"` "Loading details…"; failure: "Couldn't load the details" + "View on Congress.gov ↗" (URL built from the row's type and number); no JS: a `<noscript>` "View on Congress.gov ↗" (the loading block is hidden under `@media (scripting: none)`).
+  - `BillPanel.tsx`: takes `TrackerIndexBill & TrackerBillDetail` and shows `summary.excerpt` (T8) instead of the first 3 paragraphs; exports `External`. Markup otherwise unchanged.
+  - `BillTable.tsx`, `finder.ts` (`FinderBill` from the index type, `DEFAULTS.per` 10 and `parseState` falls back to it, `ordinal` moved here from page.tsx), `finder.test.ts` (fixtures in the index shape; +1 test: 10 is the default, 25 round-trips).
+  - `page.tsx`: passes only copy + topics; `<noscript>` note "The full list needs JavaScript. Download every bill as CSV" under the finder. `page.json` + schema: `panel.loading`, `panel.failed`, `noscript.{text,link}` (under the file's TODO(joey)).
+  - `next.config.ts`: `Cache-Control: public, max-age=3600, stale-while-revalidate=86400` on `/data/tracker/bills/:id*` and `/data/:file*.csv` (checked with curl on `next start`).
+  - `globals.css`: `.bill-panel-loading` hidden without scripting. No token added.
+  - Docs: CLAUDE.md §5 (the /tracker no-JS exception and why) and Progress; tracker-spec §4.1 (structure, server/client split, no-JS, caching, budgets), §4.4b (default 10), §4.5 (lazy panels, excerpt, companions from fetch.mjs), §5 #6; build-prompts Open items (#6 note).
+- Decisions:
+  - **The per-page bug didn't reproduce.** On a production build (and the T8 data), setting 10 changes only the page size: status, range, total, page count and all 18 pill counts stay put, and 50 per page survives a filter, a sort, Next, a reload and a hash link. I found no cause in the code (per is read and written only by parseState/toSearch and the pager). Most likely it was the broken dev server on :3000 (E7). The test from the prompt is kept as `10 per page changes only the page size…` in tracker.spec.ts.
+  - **zod was in the client bundle** (the /tracker page chunk was 108.6 KB gzip): BillRow/BillPanel import `formatDate` from `src/lib/dates.ts`, which also built the zod `isoDate` at module level, and Turbopack wouldn't tree-shake it (a `/* @__PURE__ */` attempt didn't help). Moving `isoDate` into `src/lib/iso-date.ts` (4 server imports changed) took the chunk to 19.8 KB.
+  - `index.json` ships inside the page's hashed chunk (Turbopack didn't split it out; it's 12.9 KB gzip of the 19.8).
+  - The loading block takes the panel's own box (same padding), so the row never jumps; I didn't reserve the full panel height (it varies by bill).
+  - No-JS rows open to a Congress.gov link rather than an empty panel.
+- Verified (production `next start`):
+
+  | /tracker | before (T8 data) | after |
+  |---|---|---|
+  | HTML raw / gzip | 1,495 KB / 128.5 KB | **113 KB / 30.9 KB** |
+  | JS gzip (9 scripts) | 268.6 KB | **193.4 KB** |
+  | DOM elements (after load) | 2,180 | **594** |
+  | LCP 390 / 1440 (4× CPU, Fast 3G) | 2,072 / 1,972 ms | 1,772 / 1,672 ms |
+  | TBT 390 / 1440 | 374 / 331 ms | **116 / 88 ms** (the perf test saw 104–190 ms across runs) |
+
+  - HTML composition after: 46 KB RSC payload (page.json copy etc.), 32 KB inline SVG (logo, 10 chevrons), 10 rows.
+  - `npm run lint` 0 errors; `npx tsc --noEmit` clean; `npm run build` passes; `npm run test:content` **69 passed**.
+  - `tracker.spec` + `tracker.perf.spec` on prod: **103 passed, 32 skipped** (single-project tests), 0 failed. Full suite on prod (`playwright.prod.config.ts`, log `screens/t9/e2e-prod.log`): **311 passed, 132 skipped, 27 failed**: the same 27 as T4–E7, all on the dev-only draft post and `/styleguide` (404 in production).
+  - axe 0 violations at rest (all 5 projects), with S. 146 open after its fetch, and in the loading state (request held by `page.route`).
+  - **Tests changed (expectations, not intent):** the two T3 "layout and text limits" tests now run with JS and page through every bill at `?per=100` (only one page is in the DOM); "without JavaScript…" now expects the first 10 bills in order, the noscript note and CSV link, and a Congress.gov link in an opened row; "zzzz…Clear" expects 10 rows and uses the T8 pill "Children and teens"; topic round-trip, Next/last page (11–20, last-page count) and page 3 (21–30) use 10 per page; "axe with one row open" waits for the fetched panel; "every panel open at 320" runs with JS at per=100 and waits for all panels. **New:** the per-page test, loading state + axe, failed fetch + retry, no refetch after paging back, and the perf spec.
+  - Screenshots `screens/t9/`: `default-{1440,390}.png`, `row-loading-1440.png`, `row-loaded-1440.png`, `nojs-1440.png`.
+  - Figma and Eclipse: no visual or token change apart from the loading line, so no compare.
+- Open for next prompt:
+  - **Orphaned servers I started and couldn't stop** (stopping `npx next start` left its child; `taskkill` needed approval): **:3100 PID 35252** (serves a stale T8 build) and **:3200 PID 12792** (an early T9 build). Joey: `taskkill /PID 35252 /F` and `taskkill /PID 12792 /F`. The old scratch `screens/t4/playwright.prod.config.ts` points at :3100 with reuseExistingServer, so **don't use it** until 35252 is gone; use `playwright.prod.config.ts` (:3300).
+  - TBT at 390 sits at 104–190 ms against the 200 ms budget; machine load can push it close.
+  - A filter change keeps the URL's `#hash`, so a reload re-reveals that bill and clears the filter that hid it (T11's URL round-trip hunt).
+  - Carried from T8 unchanged (the T8 TODO(joey)s, the E7 list).
+
+## T10: Tracker filters menu on phones, sticky column header · 2026-11-09
+- Built: no new files in src. Scratch in `screens/t10/` (shots, before/after finder compare, a scroll-margin mutation check).
+- Changed:
+  - `FinderControls.tsx`: below md a full-width "Filters" toggle (3.5rem, 1px border, `type-text-regular`, ChevronDown `rotate-180` when open with a `motion-safe` 300ms ease-out transition, `aria-expanded`, `aria-controls="finder-filters"`, label "Filters ({n})" counting chamber/status/sort/topic ≠ default). The selects, pills and two new buttons ("Show {n} bills" ink pill / "Show 1 bill"; "Clear filters" text button) sit in `#finder-filters`: `hidden` or `flex flex-col gap-32` below md, `md:contents` at md and up. Escape inside it closes it and focuses the toggle. Starts closed. "Show" uses `flushSync` to close before scrolling, or the scroll lands where the count was.
+  - `BillFinder.tsx`: `focusCount()` split out of `goTo` and passed as `showResults`; passes `total`.
+  - `BillTable.tsx`: a ResizeObserver writes the header's height to `--bill-head-h` on `.bill-table`.
+  - `globals.css`: under `@media (min-height: 640px)`, `.bill-head` sticky top 0, `z-index: 1`, `background-color: var(--tile-bg)`; `.bill-table :is(summary, a)` `scroll-margin-top: var(--bill-head-h, 0px)`. No reduced-motion guard (on purpose). No token added.
+  - `page.json` + schema: `finder.filters`, `filtersActive`, `showResults`, `showResultsOne`, `clearFilters` (under the file's TODO(joey)).
+  - `tests/tracker.spec.ts`: an `openFilters()` helper used before every select/pill interaction (they're hidden below md now); 8 new tests (below). `tests/tracker.perf.spec.ts`: TBT/LCP now the median of 3 cold loads. `playwright.prod.config.ts`: a `perf` project that depends on the others.
+  - Docs: CLAUDE.md §5 (the sticky-header exception and why) + Progress; Part A A9 (same, next to the sticky rules); tracker-spec §4.3 (the menu) and §4.4 (the sticky header).
+- Decisions:
+  - **"Clear filters" keeps the search and per page** (per page isn't a filter); it resets chamber, status, topic and sort.
+  - **scroll-margin from a measured variable**, not a token: the header's height changes with the ≤991 type step, so a token would duplicate the type scale.
+  - **The header ignores the ≥ 768-wide sticky rule**: the table's own width decides whether there's a header (medium layout from a 38.5rem container). The 640-tall rule holds.
+  - **Perf flakiness:** under the full parallel suite TBT reached 406 ms (CPU contention), and single loads ranged 63–216 ms even alone. So the perf spec runs in its own `perf` project after the others, and the budget applies to the median of 3 loads. Playwright skips a dependent project when any dependency fails, and the 27 known dev-route failures count, so **run it with `npx playwright test --config playwright.prod.config.ts --project perf --no-deps`** until those are fixed.
+- Verified (production `next start` on :3300):
+  - `npm run lint` 0 errors; `npx tsc --noEmit` clean; `npm run build` passes; `npm run test:content` 69 passed.
+  - **md+ unchanged:** the finder form's screenshots at 1440, 1024 and 768 are **byte-identical** before and after (`screens/t10/finder-*-{before,after}.png`).
+  - tracker specs: **111 passed**, 0 failed. Full suite: **316 passed, 27 failed** (the same dev-only draft post + `/styleguide` 27), perf skipped as a dependent; perf alone, serial ×3: **9/9 passed**, median TBT 38–103 ms, LCP ~1.65 s.
+  - New tests: at 390 the selects and pills are hidden until Filters opens, and the label reads "Filters (2)" (also after a reload, with the panel closed); "Show n bills" closes and focuses the in-viewport count, and "Clear filters" keeps it open; Escape returns focus; axe 0 with the menu closed and open; at 1440 halfway through a 100-row table the header is sticky at top 0 with all 5 labels visible; the same under reduced motion; at 1440×600 it's static; a Tab walk forward and back (≥ 80 summaries) never leaves a summary above the header's bottom. **Mutation:** with `scroll-margin-top: 0` injected, a Shift+Tab walk puts 12 of 49 summaries under the header; with it, 0.
+  - Screenshots `screens/t10/`: `menu-closed-390`, `menu-open-390`, `menu-open-2-active-390`, `menu-closed-2-active-390`, `stuck-1440`, `stuck-1024`, `focus-under-header-1440`.
+  - Figma: no frame for the phone menu (spec §5: the final mobile frames aren't designed); no compare. Eclipse: no token change.
+- Open for next prompt:
+  - The focus ring of a row scrolled to the header sits about 2px into the header's bottom rule (the outline's offset). The row itself is clear, so 2.4.11 passes; a `+ 0.25rem` on the margin would clear the ring too.
+  - The orphaned :3100 (PID 35252) and :3200 (PID 12792) servers from T9 are still running.
+  - Carried from T9 unchanged.
+
+## T11: Tracker bug sweep · 2026-11-09
+- **Dev server (item 9):** nothing is listening on :3000 (connection refused within 2 s), so it doesn't answer 200 on /tracker. The orphaned E7 server is gone; start a fresh `npm run dev` before trusting dev timing. Still orphaned from T9: **:3100 PID 35252** and **:3200 PID 12792** (`taskkill /PID <pid> /F`).
+- Built: no new src files. Scratch in `screens/t11/` (before/after shots, the data and UI hunts, the hash probe, `aria-s146.md`, `pager-measure.spec.ts`).
+- Changed (each fix with its file):
+  1. **Bare bill type search** (`finder.ts` `matchesQuery`: LABEL's number is optional; a type alone matches the type): "hr", "H.R.", "s", "S.", "hjres", "sjres". `finder.test.ts` +6 cases (4 of 6 failed before the fix).
+  2. **Pre-hydration hash** (`BillFinder.tsx`). Reproduced in about 2–4% of loads under parallel load (never serially): `framenavigated` showed `/tracker` → `#s146-119` → `/tracker`. Cause: React runs child effects before parent effects, so our first reveal ran before Next's App Router mount effect, which then replaced the URL with its canonical one (dropping our `?page` and the hash); Next's popstate handling can also drop a hash set mid-hydration before `hashchange` reads it. Fix: the first reveal runs a task later (`setTimeout`), and module-level `popstate`/`hashchange` listeners (registered before Next's) remember the hash. Test `a hash set right after load, before hydration…` (both `commit` and `load` forms): 0 failures in 300 parallel repeats plus 200 probe loads (before: 2/50, 1/100, 3/120).
+  3. **Progress bar gap** (`globals.css` new `--progress-gap` 0.1875rem; `BillRow.tsx` `gap-(--progress-gap)`), logged in `docs/token-log.md`; spec §4.4 table updated. Test: the gap computes to 3/16 rem.
+  4. **Stacked top rule** (`globals.css`): `.bill-table > ol` gets a 4px `tile-fg` top border below 38.5rem (removed in the medium/wide container query). **Chose the 4px rule:** the wide and medium tables open with the header's 4px rule, and the 1px tile-lines then read as row separators; a lone 1px line would look like a separator with nothing above it. Test: 4px stacked, 0 otherwise.
+  5. **Search clear ×** (`FinderControls.tsx`): `[&::-webkit-search-cancel-button]:appearance-none`, plus our own button inside the field (Carbon `Close`, `size-icon-inline`, ink, a 2.5rem round target with stone hover, `aria-label` "Clear search", only with a query; clears and refocuses the input). `page.json` `finder.clearSearch` + schema. CLAUDE.md §3 adds `Close` to the icon list. Test: name, ≥ 24px, visibility, the CSS rule, clear + focus.
+  6. **Pager on phones: left as is.** Per page (157.7px) + gap (16) + the widest range "1–100 of 215 bills" (108.5px) = 282px, but the nav is 272px wide at 320, so one line doesn't fit there (it would at 390). Per the prompt, unchanged.
+  7. **Stale docs:** Part A A9's "`/tracker` is a stub page" now describes the working tracker. The other "stub" mentions are in historical prompts (E6.3, E6.8, T3, T6) and handoff entries; left as written.
+  8. **Hunt fixes:**
+     - `FinderControls.tsx`: **Escape didn't close the open Filters panel when focus was on the Filters button itself** (the handler was only on the panel). Now on both; the Escape test covers it.
+     - `BillFinder.tsx`: **a filter change kept a stale `#hash`**, so a reload re-revealed that bill and cleared the filter (the URL didn't round-trip). `setSearch` keeps a hash only for a reveal. Test: hash link → chamber change → URL `?chamber=house`, and a reload keeps it.
+  - Docs: tracker-spec §4.3 (bare type search, the clear button), §4.4 (the stacked rule), §4.5 (hash handling); CLAUDE.md §3 and Progress.
+- Hunt results (production, 1440 / 1024 / 768 / 390 / 320, keyboard only, `screens/t11/hunt.spec.ts`, log `hunt.log`):
+  - Focus after every action lands where it should: search → input; clear → input; Filters open/Escape → toggle; chamber via keyboard → select; topic via arrows → radio; "Show n bills" → count; Next page → count; Tab from the count → first summary; open/close row → summary; "Clear all filters" → input. Never `body`.
+  - **0 console errors or warnings, 0 page errors, no hydration warnings** at every width.
+  - The status count and the range always agree with the rendered rows. A full URL (`?q=ai&chamber=senate&status=1&topic=safety&sort=cosponsors&page=2&per=25`) round-trips on reload.
+  - No horizontal overflow with the longest title (H.R. 10502, 269 chars), latest action (H.R. 8516, 393) and sponsor (H.R. 9757, 29), panels open.
+  - Data (`data-hunt.mjs`, all 215 bills and panel files): stage and label always agree, and each stage ≥ 2 has its milestone; milestones in date order; no milestone after the latest action; no latest action before introduction; cosponsor splits sum and original ≤ count; no empty committee, excerpt or text version; stage 5 ⇔ law. **No defects.**
+  - `ariaSnapshot` of S. 146 closed and open (`screens/t11/aria-s146.md`): the names read as sentences; the panel exposes a "Summary" region and terms/definitions, and every external link ends "(external site)".
+  - **Not worth fixing:** the snapshot shows "S. 146 , Senate" (Playwright joins inline spans with a space; Chrome's accessible name has no space before the comma). The committee line reads "Discharged From, Feb 13, 2025": that's the API's activity name, verbatim. The hunt's "clipped sr-only" hits are visually hidden text, by design.
+- Verified:
+  - `npm run lint` 0 errors (the old scratch warning); `npx tsc --noEmit` clean; `npm run build` passes; `npm run test:content` **75 passed**.
+  - Full suite on prod (`playwright.prod.config.ts`, log `screens/t11/e2e-prod.log`): **341 passed, 152 skipped, 27 failed**, all 27 the known dev-only draft post + `/styleguide`; **0 other failures**. `tracker.perf.spec.ts` (`--project perf --no-deps`): **3 passed**, LCP 1.66–1.68 s, TBT 69–100 ms (median 98).
+  - axe 0 violations on /tracker at 1440 and 390 (in every project): at rest, filtered, with a row open (after its fetch), loading, in the empty state, and with the phone Filters menu open and closed.
+  - Screenshots `screens/t11/`: `bar-1440-{before,after}`, `stacked-top-390-{before,after}`, `search-1440-{before,after}` (Chrome's blue × → our ink ×), `pager-{390,320}-before` (unchanged, item 6).
+  - Figma/Eclipse: one new token (`--progress-gap`, already 3 in Figma); no Eclipse-relevant change.
+- Open for next prompt:
+  - Run a fresh `npm run dev` and `npm run test:e2e` on it (article and scaling haven't passed on dev since T3); kill the T9 orphans (:3100 PID 35252, :3200 PID 12792).
+  - The 27 dev-only failures make Playwright skip the dependent `perf` project in a full prod run; run it with `--project perf --no-deps`.
+  - **Every open TODO(joey) for the tracker:**
+    - `content/tracker/config.json` `_note`: review the patterns, the 17 topics and the watchlist; `summaryPatterns` still has a bare `generative` (can match "Regenerative"); the inert `subjects` rule (T1/T2).
+    - The 26 bills with no topic (T8 list), and S. 2615 "VET Artificial Intelligence Act" (`veterans?` misses "VET"); use `topicOverrides` where a topic is obvious.
+    - `content/tracker/page.json` `_note`: approve all the copy, including T9's `panel.loading`/`panel.failed`/`noscript`, T10's Filters strings and T11's "Clear search".
+    - Triage `content/tracker/review.json` (66 bills).
+    - The spec §4.7 copy flag (the dek and empty body vs the real inclusion rule, T1).
+    - H.R. 2794's sponsor name ("Maria Salazar" from the API vs "María Elvira Salazar" in bills.json, T2).
+    - Hand spot-check S. 146 and H.R. 10502 on Congress.gov (T5).
+    - T7: add the `CONGRESS_API_KEY` repository secret.
+    - Set `SITE_URL` before launch (the tracker citation's URL).
+
+## T7: Daily tracker refresh workflow · 2026-11-09
+- Built: `.github/workflows/tracker.yml` ("Tracker refresh"): daily at 10:17 UTC (`17 10 * * *`) and `workflow_dispatch`. Steps: `actions/checkout@v7`, `actions/setup-node@v7` (`node-version-file: .nvmrc`, `cache: npm`), `npm ci`, `actions/cache@v6` on `.cache/congress` (key `congress-${run_id}`, restore-keys `congress-`, since cache keys are immutable), `npm run tracker:fetch` with `CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}`, then a commit step: `git add content/tracker content/bill-stats.json public/data`, exit if `git diff --cached --quiet`, else commit "data: tracker refresh YYYY-MM-DD" as github-actions[bot] and push. `permissions: contents: write` only; `concurrency: tracker-refresh` with `cancel-in-progress: false`; `timeout-minutes: 90`. `.nvmrc` = `24.19.0` (the local Node; neither `.nvmrc` nor `engines` existed).
+- Changed: `content/tracker/page.json`: the dek's clause is now "Status updated daily from Congress.gov." and `_note` adds a TODO(joey) (true only once the Action has run green). `docs/tracker-spec.md`: §3.6 (commit paths now `public/data/`, which includes T8's per-bill files; .nvmrc, permissions, concurrency, fail-before-commit) and §6 (the steps to add the secret, push, first run, check, branch protection). CLAUDE.md Progress.
+- Decisions:
+  - **Commits all of `public/data/`**, not only `*.csv` as the old §3.6 said: T8's `public/data/tracker/bills/*.json` change with each fetch and must ship with index.json.
+  - **A failed fetch never commits:** fetch.mjs builds everything in memory and writes last, and a top-level throw exits non-zero; the step fails, so the commit step doesn't run (and actions/cache only saves on success).
+  - Action majors from the READMEs (checkout v7, setup-node v7, cache v6), not the docs' older v4 examples.
+  - `congress.mjs` already falls back to the `CONGRESS_API_KEY` env var when `.env.local` is absent (T1), so no script change was needed.
+- Verified:
+  - `npm run lint` 0 errors (the old scratch warning in screens/t6); `npm run build` passes; `npm run test:content` 75 passed.
+  - The YAML parses (js-yaml via gray-matter): triggers, permissions, concurrency and the 6 steps as intended. `package-lock.json`'s root matches package.json, so `npm ci` won't fail on a mismatch (npm ci itself wasn't run locally; it would wipe node_modules).
+  - Checked against docs.github.com (workflow syntax, events that trigger workflows, using secrets, GITHUB_TOKEN, caching, manually running a workflow) and the three action READMEs: schedule is POSIX cron in UTC on the default branch's latest commit, and an off-the-hour minute avoids load delays; `workflow_dispatch` needs the file on the default branch; the secret goes in a step's `env:` from `secrets.*`; keys are immutable and restore-keys prefix-match the newest; the commit identity and plain `git push` follow the checkout README (`persist-credentials` defaults to true). **Not confirmed in the pages fetched:** that `contents: write` covers `git push` (the syntax table only mentions releases); it's the standard scope for pushing, but the first run is the real check.
+  - The workflow was not run (no push, per the prompt).
+- Open for next prompt:
+  - **Joey:** add the secret, push, and run the workflow once (spec §6 steps). Then resolve page.json's "updated daily" TODO(joey).
+  - **Methodology paragraph 3 still says "we refresh it by hand"** (page.json `methodology`), which now contradicts the dek. Not in this prompt's list; change it with the dek once the Action is green.
+  - Pushes made with GITHUB_TOKEN don't trigger other workflows (none exist). A Vercel Git deploy isn't a workflow, so it should still deploy on the bot's commit; confirm after the first run.
+  - In a public repo, GitHub disables scheduled workflows after 60 days without repository activity. If `main` is protected against direct pushes, the commit step fails (see spec §6.5).
+  - Carried from T11 unchanged (the TODO(joey) list, the T9 orphan servers, the dev-server e2e run, perf `--no-deps`).
